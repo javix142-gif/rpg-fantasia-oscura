@@ -3,10 +3,11 @@
 Repositorio base para desarrollar el RPG móvil con Codex Cloud + Godot.
 
 ## Estado
-**PROMPT 1 COMPLETADO / LISTO PARA PROMPT 2**
+**P1.1 CLOUD COMPLETADO / QA DE DISPOSITIVO PENDIENTE**
 
-El gate Cloud de Prompt 0 y la primera slice jugable de Liria están validados.
-Prompt 2 (ataque de Liria + combate ARPG) aún no ha comenzado.
+El gate Cloud de Prompt 0, Prompt 1 y su reparación P1.1 están validados.
+Prompt 2 (ataque de Liria + combate ARPG) aún no ha comenzado y permanece
+bloqueado hasta la prueba física y aprobación visual.
 
 ## Gates completados
 Prompt 0 preparó y validó:
@@ -27,6 +28,12 @@ save/load y el pipeline visual JIT. La validación reproducible de Stage 1 es:
 ./scripts/test_stage1.sh
 ```
 
+P1.1 reparó la orientación Android landscape, safe area, interacción táctil,
+animación real del jugador y la integración visual de Liria/NPC. El APK de
+esta corrección es `builds/android/rpg_stage1_liria_p11.apk` (ignorado por
+Git). `DEVICE_QA=PENDING`, `USER_VISUAL_APPROVAL=PENDING` y
+`PROMPT_1_REAL=PENDING`.
+
 La preparación se reproduce desde un checkout limpio con:
 
 ```bash
@@ -44,8 +51,8 @@ Git). Para ejecuciones separadas:
 
 El proyecto Godot se encuentra en `game/`. Prompt 0 genera
 `builds/android/rpg_prompt0_smoke.apk`; Prompt 1 genera
-`builds/android/rpg_stage1_liria.apk` (ambos artefactos están ignorados por
-Git).
+`builds/android/rpg_stage1_liria.apk`; P1.1 genera
+`builds/android/rpg_stage1_liria_p11.apk` (artefactos ignorados por Git).
 
 ## Fuente de verdad
 - `docs/canon/`: canon narrativo.

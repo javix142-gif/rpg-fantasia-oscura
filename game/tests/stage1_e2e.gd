@@ -144,6 +144,10 @@ func _test_runtime_movement() -> void:
 	_check(after.x > before.x and after.y > before.y, "runtime movement advances")
 	_check(String(player.direction8) == "SE", "runtime diagonal direction")
 	_check(is_equal_approx(player.movement_input.length(), 1.0), "runtime input normalized")
+	_check(player.get_node_or_null("PlayerAnimatedSprite") is AnimatedSprite2D, "player uses AnimatedSprite2D")
+	for direction in DIRECTIONS:
+		_check(player.get_animation_frame_count("idle", direction) > 1, "idle has real frames: " + direction)
+		_check(player.get_animation_frame_count("walk", direction) > 1, "walk has real frames: " + direction)
 	player.set_virtual_input(Vector2.ZERO)
 	host.queue_free()
 
@@ -153,34 +157,59 @@ func _test_ui_e2e() -> void:
 	root.add_child(main)
 	await process_frame
 	main._show_world()
-	await process_frame
+	await physics_frame
 	var player = main.player
 	var world = main.world
 	var iria = world.npcs[0]
 	var halven = world.npcs[1]
-	player.global_position = iria.global_position
-	main._process(0.0)
-	main._interact()
+	# Start at the normal plaza spawn and walk into Iria's interaction Area2D.
+	_check(player.current_interaction_target == null, "interaction starts out of range")
+	await _walk_until_target(player, iria.global_position, iria.actor_id)
+	_check(player.current_interaction_target != null, "Iria target enters range")
+	_check(not main.hud.interact_button.disabled, "touch interaction button enabled")
+	main.hud.interact_button.emit_signal("pressed")
 	await process_frame
 	_check(main.dialogue.visible, "Iria dialogue opens")
-	var iria_dialogue: Dictionary = main.dialogue.active_dialogue
-	main.dialogue._on_choice(iria_dialogue["nodes"]["start"]["choices"][0])
-	main.dialogue._on_choice(iria_dialogue["nodes"]["started"]["choices"][0])
+	await _press_dialogue_choice(main.dialogue, 0)
+	await _press_dialogue_choice(main.dialogue, 0)
 	_check(String(game_state.call("quest_status", "MQ00_01")) == "ACTIVE", "Iria starts MQ00_01")
-	player.global_position = halven.global_position
-	main._process(0.0)
-	main._interact()
+	await _walk_until_target(player, halven.global_position, halven.actor_id)
+	_check(not main.hud.interact_button.disabled, "Halven touch button enabled")
+	main.hud.interact_button.emit_signal("pressed")
 	await process_frame
-	var halven_dialogue: Dictionary = main.dialogue.active_dialogue
-	main.dialogue._on_choice(halven_dialogue["nodes"]["start"]["choices"][0])
-	main.dialogue._on_choice(halven_dialogue["nodes"]["given"]["choices"][0])
+	await _press_dialogue_choice(main.dialogue, 0)
+	await _press_dialogue_choice(main.dialogue, 0)
 	_check(int(game_state.call("item_quantity", "ITEM_LANTERN")) == 1, "Halven gives quest item")
-	player.global_position = iria.global_position
-	main._process(0.0)
-	main._interact()
+	await _walk_until_target(player, iria.global_position, iria.actor_id)
+	main.hud.interact_button.emit_signal("pressed")
 	await process_frame
-	var return_dialogue: Dictionary = main.dialogue.active_dialogue
-	main.dialogue._on_choice(return_dialogue["nodes"]["return"]["choices"][0])
-	main.dialogue._on_choice(return_dialogue["nodes"]["complete"]["choices"][0])
+	await _press_dialogue_choice(main.dialogue, 0)
+	await _press_dialogue_choice(main.dialogue, 0)
 	_check(String(game_state.call("quest_status", "MQ00_01")) == "COMPLETE", "Iria completes MQ00_01")
 	main.queue_free()
+
+func _press_dialogue_choice(panel: DialoguePanel, index: int) -> void:
+	var buttons := panel.choices_box.get_children()
+	_check(index >= 0 and index < buttons.size(), "dialogue choice is rendered")
+	if index < 0 or index >= buttons.size():
+		return
+	var button := buttons[index] as Button
+	_check(button != null, "dialogue choice is a button")
+	if button == null:
+		return
+	button.emit_signal("pressed")
+	await process_frame
+
+func _walk_until_target(player: PlayerController, target_position: Vector2, target_id: String) -> void:
+	for _frame in range(160):
+		var distance := player.global_position.distance_to(target_position)
+		if distance < 76.0 and player.current_interaction_target != null and player.current_interaction_target.target_id == target_id:
+			player.set_virtual_input(Vector2.ZERO)
+			await physics_frame
+			return
+		if distance <= 1.0:
+			break
+		player.set_virtual_input(player.global_position.direction_to(target_position))
+		await physics_frame
+	player.set_virtual_input(Vector2.ZERO)
+	await physics_frame
