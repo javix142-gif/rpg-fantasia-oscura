@@ -1,0 +1,66 @@
+# MANIFEST_REPO_BASE_v1.md
+
+Archivos previos al manifiesto: 60
+
+| Archivo | Bytes | SHA-256 |
+|---|---:|---|
+| `.agents/skills/README.md` | 235 | `c14fda6b6f401cd5e96510eff69818aac957f29caa737c7cf6eb33215e528a57` |
+| `.agents/skills/rpg-mobile-project-contract/SKILL.md` | 1287 | `fe567ddc0623e586face9b6b635c5f5e4a977a426767119add661611e84210c5` |
+| `.codex/config.toml.example` | 316 | `566bcee172ee44d0d0214ec6cda68155458d6bf138ce59e16bc7a7cf433fb254` |
+| `.gitignore` | 288 | `cb5565a847fa314b14af5b0c588251db60c041254908088e36340a6ff8eef8ce` |
+| `AGENTS.md` | 2314 | `99b8d278680a78fc0e0a42c0982adfce25e31e53511933e9216bb8ddc5f5d29f` |
+| `PROJECT_STATE.md` | 1223 | `31eb1754c07635d6ed8f03b79ea2d123d025369038e6575fc33cdfef462a3d5d` |
+| `PROMPT_0_CODEX_CLOUD.md` | 7886 | `cb56892c965bb9183923401229deae904546751ebf7e44dcd7984d09efdf4858` |
+| `README.md` | 867 | `930e8979617b9eb5b1cc56fbfe23566146ece97f749bc05626c68ec3b612b578` |
+| `SESSION_SUMMARY.md` | 395 | `f8cbe73988d5bbfc919f855efe64b21de0724fee7f8d9a94e752cf0a802ced7a` |
+| `THIRD_PARTY_NOTICES.md` | 864 | `4dbdd4aee66bd36311e48b0fb50dd4bfa0c1a6e707353997e07a3db75914db58` |
+| `VERSIONS.lock.json` | 1104 | `6e4daf3639ad776e62395639df52202eedec2fdd31919c63d02f45d068c1d45d` |
+| `addons/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `addons/README.md` | 153 | `ce4998f308c960b3b41f1a5ff65acc20ebc3f194e2543b143fba8143ab24e3b4` |
+| `archive/README.md` | 74 | `15b9e1b17fda8406c72ad3f054a7c1eaab04431769a3152c9579012efb0c75a4` |
+| `archive/RPG_FANTASIA_OSCURA_REGISTRO_COMPLETO_v3.zip` | 178964 | `98703d08df248973fa85367d336e47e63b1b1643a6245b312f3c6a85c068ad8c` |
+| `assets/README.md` | 142 | `f9befe0e177db185b0119fa99a37b602fa5367ed297ff114da258991c516d681` |
+| `assets/final/characters/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/final/enemies/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/final/environment/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/final/portraits/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/final/ui/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/final/vfx/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/placeholder/characters/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/placeholder/enemies/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/placeholder/environment/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `assets/placeholder/ui/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `builds/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `docs/canon/CYRION_CANON_v1.md` | 17604 | `9efe61da5074f8ba84ca1e1a3942f12e2e28e8fddccc5b3c69d3740514292e46` |
+| `docs/canon/HISTORIA_PRINCIPAL_CANON_v1.md` | 29574 | `86fe325d5919d14b7da5da536be9787556e02731e01d4c5de9e1e50e17303178` |
+| `docs/canon/IMPERIO_CINCO_DIVINOS_CORRUPCION_CANON_v1.md` | 23633 | `74e26eb933214fd1f0a9287a9df273eea4734fafe0f215d27cade55681f5ccbd` |
+| `docs/canon/RPG_FANTASIA_OSCURA_DOCUMENTO_MAESTRO_v0.4.md` | 74529 | `45575ba55d9beee9678aa3867154cd6f7b555df811e9e43400187d9a6ab96e1e` |
+| `docs/canon/SUBREINOS_CUATRO_CANON_v1.md` | 58601 | `f670fee8a4ff8979bffbd507cb5a852977af4ce9f352cdf3c3575a409cfd0987` |
+| `docs/design/PREPRODUCCION_PUNTOS_01_14_CANON_v1.md` | 51615 | `bc87ea1130ace90b06648c32d7e2bc046d2b71191ec295765f05082ee116f3b2` |
+| `docs/implementation/PLAN_VERTICAL_SLICE_3_ETAPAS.md` | 1170 | `68339738f879c87efccae29ebdd218f3869a7323a994c7b050682cc1ff5be99e` |
+| `docs/process/CHECKLIST_SEGURIDAD_VALIDACION.md` | 1840 | `19cf2f4db5b93f4b28de7077b4eec5f936dc171be146bbe87921c319e4aa1713` |
+| `docs/process/FLUJO_DESARROLLO_ASISTIDO_IA.md` | 2197 | `2f0de9e4108c9fa61c6b798233d6e0aa00257dfa46200a80ddd69edd90060b1d` |
+| `docs/process/POLITICA_AHORRO_TOKENS.md` | 3080 | `01c10b0a4a724904f532e40ae7e144000b71839443fb4a2afa5a5cf64385f682` |
+| `docs/tooling/CODEX_CLOUD_SETUP_SPEC.md` | 892 | `fa256cc62e46b77e72149c03cc9a9da8cda876d799135c3b0db9619692d2dcf0` |
+| `docs/tooling/SELECTED_TOOLS_AND_SKILLS.md` | 1061 | `dc050cfe2be7a0be4620cd2def32b0db4acc867189964a9ed20822434852018d` |
+| `docs/visual/ART_DIRECTION.md` | 7153 | `86ca386337d0d1ed5ef74de20a2586904464bb4f84028b3cfbb2a8dc32c77458` |
+| `docs/visual/ASSET_MANIFEST.md` | 6599 | `7d23ecbde0c76c1fd60701b82d8f9ddc6ccd2eec70947df93552ef881a212d4b` |
+| `docs/visual/SPRITE_TECH_SPEC.md` | 5555 | `17bac915bd7241a8a8647ff59b9e583b99ab0ea003c20f4990435af03f5487e8` |
+| `docs/visual/UI_VISUAL_SPEC.md` | 6450 | `f05039ec39666c410ab6038d53822f1319f188de51b42d75749441ae7df4642a` |
+| `game/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `references/REFERENCES_README.md` | 520 | `736908e89ddc0f688017828da956e55d7e818569c8f93031a233443f09be88dc` |
+| `references/REFERENCE_INDEX.md` | 931 | `5e33442bda2a217cdc0a7f5088575cdb38efb3a629963a5ffc52e722df9a9035` |
+| `references/combat/ref_combat_classic_party_boss_01.png` | 461114 | `60b36a62ba1a840f9c1c0049b6a5b22023b9b51d3eb1d4c6973562fcba4b9cae` |
+| `references/combat/ref_combat_mobile_resolution_03.webp` | 172646 | `0eb2797e2b2ec8a3518371646853511a7e3d62874442ea5dd4f0213aef52a27c` |
+| `references/combat/ref_combat_narrative_card_02.jpg` | 264875 | `432b6135ac69e8a8872bf255d31282cf7adc664f30399595f2b185cb36dd22cf` |
+| `references/exploration/ref_exploration_dense_town_01.png` | 440093 | `3b1cac9aa204952357a62f99e15c83fe393a906aa97f6050878c009d390ea8fe` |
+| `references/exploration/ref_exploration_dense_village_02.gif` | 140538 | `ce5d9580edbbbadd64c3951d015f55fd85d090fb145948fcf83af5bf73c5fb2f` |
+| `references/exploration/ref_exploration_isometric_interior_03.webp` | 283948 | `47069f0e449a0b09dab3963995ee17e8733c98740f224c9a8526a1d077c53b7a` |
+| `references/narrative/ref_narrative_background_choices_01.jpg` | 222937 | `b2d329078599509ea9bf2a78d78f9502fef7f1dc7fb6d8e58b3cdda7cb00ad91` |
+| `references/narrative/ref_narrative_dialogue_portrait_02.webp` | 297341 | `dad1e91a6cf4107d106d333862474dba26a1c5491f5a3e76f646b15241d01d71` |
+| `references/ui/ref_ui_landscape_hud_01.png` | 426114 | `a248d3d615abdfe9af913177bfbca770d361b07a58c9fb39b46ca2fba8680890` |
+| `references/ui/ref_ui_landscape_hud_02.png` | 519417 | `116c779c84a147496d5df31c6a5775bcf1fa822e1ccdb7ea8e03bddc15b38a4f` |
+| `scripts/build/README.md` | 362 | `31265d93b893a62e62903447d69338208a1271367fc97c95bd38a9ad215b648c` |
+| `scripts/codex/validate_repo.sh` | 405 | `95560f4c54d5dc4ba3119695f71838143bf5a0f2fcc2803c78b5a57013393418` |
+| `scripts/codex/verify_environment.sh` | 613 | `86a0e917d7ceeb6a0b9cfb379388862c2b3985727c8d862024ef00153a46be0c` |
+| `tests/.gitkeep` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |

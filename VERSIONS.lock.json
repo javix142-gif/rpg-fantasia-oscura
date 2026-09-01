@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-01",
+  "godot": {
+    "version": "4.7.2",
+    "edition": "standard",
+    "channel": "stable",
+    "linux_x86_64_sha256": "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4",
+    "export_templates_sha256": "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011"
+  },
+  "gda": {
+    "baseline_version": "0.12.0",
+    "python": ">=3.13",
+    "policy": "verify before install; if changed, document and update this lock"
+  },
+  "android": {
+    "jdk": "17",
+    "target_sdk": 36,
+    "min_sdk_baseline": 28
+  },
+  "candidate_addons_not_installed": {
+    "gut": "9.7.1",
+    "dialogue_manager": "3.10.5"
+  },
+  "candidate_skills": {
+    "source": "thedivergentai/GD-Agentic-Skills",
+    "prompt0": [
+      "godot-project-foundations",
+      "godot-gdscript-mastery",
+      "godot-platform-mobile",
+      "godot-export-builds"
+    ],
+    "later": [
+      "godot-characterbody-2d",
+      "godot-input-handling",
+      "godot-combat-system",
+      "godot-rpg-stats",
+      "godot-save-load-systems",
+      "godot-testing-patterns"
+    ]
+  }
+}
