@@ -1,9 +1,9 @@
-; Prompt 0 smoke project. No gameplay systems are present.
+; Prompt 1 playable Liria vertical-slice project. P2 combat is intentionally absent.
 config_version=5
 
 [application]
-config/name="RPG Fantasía Oscura — Prompt 0 Smoke"
-run/main_scene="res://smoke_bootstrap.tscn"
+config/name="RPG Fantasía Oscura — Liria P1"
+run/main_scene="res://main.tscn"
 config/icon="res://icon.svg"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
@@ -15,6 +15,39 @@ size/viewport_height=360
 size/window_width_override=1280
 size/window_height_override=720
 stretch/mode="canvas_items"
+
+[input]
+
+move_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":4194311)]
+}
+move_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":4194313)]
+}
+move_up={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":87), Object(InputEventKey,"physical_keycode":4194320)]
+}
+move_down={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":4194322)]
+}
+interact={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":69), Object(InputEventKey,"physical_keycode":32)]
+}
+inventory={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":73)]
+}
+[autoload]
+
+GameState="*res://core/game_state.gd"
+SaveService="*res://core/save_service.gd"
+SceneRouter="*res://core/scene_router.gd"
+EventBus="*res://core/event_bus.gd"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

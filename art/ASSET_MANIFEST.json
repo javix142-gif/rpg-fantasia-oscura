@@ -1,0 +1,1520 @@
+{
+	"assets": {
+		"ASSET_LIRIA_KIT": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				768.0,
+				512.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_LIRIA_KIT",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/liria_kit.png",
+			"output_sha256": "4474447998af2ee04575e2bf2376dd16f3a5d70f2854b4dd2a7937c8d775f822",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_768x512",
+				"nearest_neighbor"
+			],
+			"provenance": "OpenAI native Image Generation, P1 Liria environment family prompt, 2026-09-01",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "environment_family",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_BASE": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_BASE",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"crop_transparent",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "OpenAI native Image Generation, P1 character master prompt, 2026-09-01",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "character_master",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_E": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"E"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_E",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "Selected master used as directional baseline",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_alias",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_IDLE": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"N",
+				"NE",
+				"E",
+				"SE",
+				"S",
+				"SW",
+				"W",
+				"NW"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_IDLE",
+			"mirror_source": null,
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw",
+				"bob_motion"
+			],
+			"provenance": "Stable one-frame idle with deterministic bob",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "idle_placeholder",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_N": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"N"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_N",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "Selected master used as directional baseline",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_alias",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_NE": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"NE"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_NE",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "Selected master used as directional baseline",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_alias",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_NW_MIRROR": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"NW"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_NW_MIRROR",
+			"mirror_source": "ASSET_PLAYER_NE",
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"flip_h",
+				"nearest_neighbor"
+			],
+			"provenance": "Runtime horizontal mirror",
+			"source_path": "generated:mirror_of_NE",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_mirror",
+			"visual_qa_status": "VISUAL_DEBT_MIRROR"
+		},
+		"ASSET_PLAYER_S": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_S",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "Selected master visual baseline",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_alias",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_SE": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"SE"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_PLAYER_SE",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_master.png",
+			"output_sha256": "82f57b8e145df5015fdbb9c4dcd36b9f7655c8678d4922820b036b0ed74e0102",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "Selected master used as directional baseline",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_alias",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_SWORD": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_SWORD",
+			"mirror_source": null,
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Sword visible in selected CHARACTER_MASTER; runtime sprite",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "weapon_overlay",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ASSET_PLAYER_SW_MIRROR": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"SW"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_SW_MIRROR",
+			"mirror_source": "ASSET_PLAYER_SE",
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"flip_h",
+				"nearest_neighbor"
+			],
+			"provenance": "Runtime horizontal mirror",
+			"source_path": "generated:mirror_of_SE",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_mirror",
+			"visual_qa_status": "VISUAL_DEBT_MIRROR"
+		},
+		"ASSET_PLAYER_WALK": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"N",
+				"NE",
+				"E",
+				"SE",
+				"S",
+				"SW",
+				"W",
+				"NW"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_WALK",
+			"mirror_source": null,
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw",
+				"bob_motion"
+			],
+			"provenance": "Stable placeholder walk motion; full six-frame art deferred",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "walk_placeholder",
+			"visual_qa_status": "VISUAL_DEBT_WALK_FRAMES"
+		},
+		"ASSET_PLAYER_W_MIRROR": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ASSET_PLAYER_W_MIRROR",
+			"mirror_source": "ASSET_PLAYER_E",
+			"output_path": "game/world/player_controller.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"flip_h",
+				"nearest_neighbor"
+			],
+			"provenance": "Runtime horizontal mirror",
+			"source_path": "generated:mirror_of_E",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "direction_mirror",
+			"visual_qa_status": "VISUAL_DEBT_MIRROR"
+		},
+		"CHR_HALVEN": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_HALVEN",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned procedural placeholder",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_IRIA": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_IRIA",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned procedural placeholder",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_MERCHANT": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_MERCHANT",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned NPC variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_SMITH": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_SMITH",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned NPC variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_VILLAGER_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_VILLAGER_A",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Reused NPC base variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_VILLAGER_B": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_VILLAGER_B",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Reused NPC base variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_VILLAGER_C": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_VILLAGER_C",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Reused NPC base variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"CHR_VILLAGER_D": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [
+				"S",
+				"E",
+				"N",
+				"W"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "CHR_VILLAGER_D",
+			"mirror_source": null,
+			"output_path": "game/world/npc.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Reused NPC base variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "npc_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_BUSH_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ENV_BUSH_A",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned deterministic variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "vegetation_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_HOUSE_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				224.0,
+				160.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ENV_HOUSE_A",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"family_reuse"
+			],
+			"provenance": "Liria source family plus deterministic composition",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "architecture_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_HOUSE_B": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				224.0,
+				160.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ENV_HOUSE_B",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned modular variant",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "architecture_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_LIRIA_PROCEDURAL": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				960.0,
+				640.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ENV_LIRIA_PROCEDURAL",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"nearest_neighbor"
+			],
+			"provenance": "Project-owned procedural composition guided by visual spec",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "environment_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_MARKET_STALL": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				192.0,
+				128.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ENV_MARKET_STALL",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"family_reuse"
+			],
+			"provenance": "Liria source family plus deterministic composition",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "architecture_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_SMITHY": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				256.0,
+				160.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ENV_SMITHY",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"family_reuse"
+			],
+			"provenance": "Liria source family plus deterministic composition",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "architecture_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ENV_TREE_OAK_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				128.0,
+				128.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ENV_TREE_OAK_A",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"pivot": [
+				64.0,
+				118.0
+			],
+			"processing": [
+				"godot_draw",
+				"family_reuse"
+			],
+			"provenance": "Liria source family plus deterministic composition",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "vegetation_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"INTERACTION_TARGET": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				32.0,
+				32.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "INTERACTION_TARGET",
+			"mirror_source": null,
+			"output_path": "game/world/interaction_target.gd",
+			"output_sha256": "",
+			"pivot": [
+				16.0,
+				28.0
+			],
+			"processing": [
+				"typed_id",
+				"prompt",
+				"action_signal"
+			],
+			"provenance": "Project-owned reusable interaction component",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "interaction_component",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"ITEM_LANTERN": {
+			"cell_size": [
+				24.0,
+				24.0
+			],
+			"dimensions": [
+				24.0,
+				24.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "ITEM_LANTERN",
+			"mirror_source": null,
+			"output_path": "game/ui/hud.gd",
+			"output_sha256": "",
+			"pivot": [
+				12.0,
+				20.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Godot-rendered tutorial item icon",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "quest_item",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PORTRAIT_PLAYER": {
+			"cell_size": [
+				96.0,
+				96.0
+			],
+			"dimensions": [
+				96.0,
+				96.0
+			],
+			"directions": [
+				"S"
+			],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "PORTRAIT_PLAYER",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/player_portrait.png",
+			"output_sha256": "987a6c01c0964244fa5fa06680a621eaf03697541de52773c46c80885cd464d2",
+			"pivot": [
+				48.0,
+				88.0
+			],
+			"processing": [
+				"alpha",
+				"canvas_96x96",
+				"nearest_neighbor"
+			],
+			"provenance": "Same selected CHARACTER_MASTER source; derived portrait",
+			"source_path": "art/source/p1/selected/character_master_source.png",
+			"source_sha256": "b9f4273049c66a20b590859e195611be102d79b11087369fb86523804900f31d",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "portrait",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PROP_BARREL": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				32.0,
+				32.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "PROP_BARREL",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				16.0,
+				28.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned prop module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "prop_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PROP_BENCH": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				64.0,
+				32.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "PROP_BENCH",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				28.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned prop module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "prop_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PROP_FOUNTAIN": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				96.0,
+				64.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "PROP_FOUNTAIN",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				48.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned plaza landmark",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "prop_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PROP_LAMP": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				32.0,
+				64.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "PROP_LAMP",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				16.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned prop module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "prop_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"PROP_SMITH_ANVIL": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				64.0,
+				32.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "PROP_SMITH_ANVIL",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				32.0,
+				28.0
+			],
+			"processing": [
+				"godot_draw"
+			],
+			"provenance": "Project-owned prop module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "prop_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"TILE_COBBLE_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				768.0,
+				512.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "TILE_COBBLE_A",
+			"mirror_source": null,
+			"output_path": "game/assets/p1/liria_kit.png",
+			"output_sha256": "4474447998af2ee04575e2bf2376dd16f3a5d70f2854b4dd2a7937c8d775f822",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"nearest_neighbor",
+				"family_reuse"
+			],
+			"provenance": "Selected Liria family source",
+			"source_path": "art/source/p1/selected/liria_environment_source.png",
+			"source_sha256": "0c8169db6e214c493232bc6ba5a5eeee8a6db295282e6c909bd89af4b4e0e56b",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ground_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"TILE_DIRT_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "TILE_DIRT_A",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"nearest_neighbor"
+			],
+			"provenance": "P1 palette module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ground_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"TILE_GRASS_A": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				64.0,
+				64.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "TILE_GRASS_A",
+			"mirror_source": null,
+			"output_path": "game/world/village_world.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"nearest_neighbor"
+			],
+			"provenance": "P1 palette module",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ground_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_CLASS_ICONS": {
+			"cell_size": [
+				24.0,
+				24.0
+			],
+			"dimensions": [
+				24.0,
+				24.0
+			],
+			"directions": [],
+			"frame_count": 5.0,
+			"generation_attempts": 0.0,
+			"id": "UI_CLASS_ICONS",
+			"mirror_source": null,
+			"output_path": "game/main.gd",
+			"output_sha256": "",
+			"pivot": [
+				12.0,
+				12.0
+			],
+			"processing": [
+				"godot_text",
+				"no_rasterized_ai_text"
+			],
+			"provenance": "Godot-rendered class names/icons",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_OK",
+			"type": "ui_text_icons",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_DIALOGUE_PANEL": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				456.0,
+				100.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "UI_DIALOGUE_PANEL",
+			"mirror_source": null,
+			"output_path": "game/ui/dialogue_panel.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"safe_area"
+			],
+			"provenance": "Project-owned UI geometry",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ui_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_INTERACTION_BUTTON": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				96.0,
+				42.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "UI_INTERACTION_BUTTON",
+			"mirror_source": null,
+			"output_path": "game/ui/hud.gd",
+			"output_sha256": "",
+			"pivot": [
+				48.0,
+				21.0
+			],
+			"processing": [
+				"godot_draw",
+				"touch"
+			],
+			"provenance": "Project-owned UI geometry",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ui_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_JOYSTICK": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				112.0,
+				112.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "UI_JOYSTICK",
+			"mirror_source": null,
+			"output_path": "game/ui/virtual_joystick.gd",
+			"output_sha256": "",
+			"pivot": [
+				56.0,
+				56.0
+			],
+			"processing": [
+				"godot_draw",
+				"deadzone"
+			],
+			"provenance": "Project-owned touch control",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ui_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_P1_HUD": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				640.0,
+				360.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "UI_P1_HUD",
+			"mirror_source": null,
+			"output_path": "game/ui/hud.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"nearest_neighbor"
+			],
+			"provenance": "Project-owned UI geometry guided by visual spec",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ui_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		},
+		"UI_STATUS_PANEL": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				188.0,
+				66.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 0.0,
+			"id": "UI_STATUS_PANEL",
+			"mirror_source": null,
+			"output_path": "game/ui/hud.gd",
+			"output_sha256": "",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"godot_draw",
+				"safe_area"
+			],
+			"provenance": "Project-owned UI geometry",
+			"source_path": "generated:procedural",
+			"source_sha256": "",
+			"stage": "P1",
+			"status": "PLACEHOLDER_GOOD",
+			"type": "ui_procedural",
+			"visual_qa_status": "P1_PROVISIONAL"
+		}
+	},
+	"schema_version": 1.0,
+	"stage": "P1",
+	"style_version": "P1_PALETTE_V1"
+}

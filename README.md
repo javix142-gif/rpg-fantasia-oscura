@@ -3,13 +3,13 @@
 Repositorio base para desarrollar el RPG móvil con Codex Cloud + Godot.
 
 ## Estado
-**PROMPT 0 COMPLETADO / ESPERANDO AUTORIZACIÓN PARA ETAPA 1**
+**PROMPT 1 COMPLETADO / LISTO PARA PROMPT 2**
 
-El entorno Cloud y el smoke Android están validados. Todavía no debe
-implementarse gameplay sin una instrucción explícita para iniciar la Etapa 1.
+El gate Cloud de Prompt 0 y la primera slice jugable de Liria están validados.
+Prompt 2 (ataque de Liria + combate ARPG) aún no ha comenzado.
 
-## Primer gate
-Codex Cloud debe:
+## Gates completados
+Prompt 0 preparó y validó:
 1. organizar/normalizar el repo;
 2. preparar Godot 4.7.2;
 3. preparar export templates;
@@ -19,6 +19,13 @@ Codex Cloud debe:
 7. crear un proyecto Godot smoke bajo `game/`;
 8. validar headless;
 9. exportar una APK debug mínima.
+
+Prompt 1 añadió la fundación jugable, Liria normal, MQ00_01, inventario,
+save/load y el pipeline visual JIT. La validación reproducible de Stage 1 es:
+
+```bash
+./scripts/test_stage1.sh
+```
 
 La preparación se reproduce desde un checkout limpio con:
 
@@ -35,8 +42,10 @@ Git). Para ejecuciones separadas:
 ./scripts/build_android_debug.sh
 ```
 
-El smoke se encuentra en `game/` y el APK debug se genera en
-`builds/android/rpg_prompt0_smoke.apk`.
+El proyecto Godot se encuentra en `game/`. Prompt 0 genera
+`builds/android/rpg_prompt0_smoke.apk`; Prompt 1 genera
+`builds/android/rpg_stage1_liria.apk` (ambos artefactos están ignorados por
+Git).
 
 ## Fuente de verdad
 - `docs/canon/`: canon narrativo.
