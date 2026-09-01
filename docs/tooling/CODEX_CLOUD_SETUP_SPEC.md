@@ -43,3 +43,14 @@ No asumir herramientas.
 - APK debug;
 - scripts reproducibles;
 - PROJECT_STATE actualizado.
+
+## Ejecución reproducible
+Desde la raíz del checkout:
+
+```bash
+./scripts/codex/setup_cloud.sh
+./scripts/validate.sh
+```
+
+Las dependencias se mantienen bajo `.tools/`, ignorado por Git. Godot usa rutas
+XDG locales a ese directorio; no se versionan SDKs, keystores ni APKs.

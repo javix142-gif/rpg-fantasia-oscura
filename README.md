@@ -3,9 +3,10 @@
 Repositorio base para desarrollar el RPG móvil con Codex Cloud + Godot.
 
 ## Estado
-**PRE-IMPLEMENTACIÓN / PROMPT 0**
+**PROMPT 0 COMPLETADO / ESPERANDO AUTORIZACIÓN PARA ETAPA 1**
 
-Todavía no debe implementarse gameplay.
+El entorno Cloud y el smoke Android están validados. Todavía no debe
+implementarse gameplay sin una instrucción explícita para iniciar la Etapa 1.
 
 ## Primer gate
 Codex Cloud debe:
@@ -19,7 +20,23 @@ Codex Cloud debe:
 8. validar headless;
 9. exportar una APK debug mínima.
 
-Sólo después comienza la Etapa 1.
+La preparación se reproduce desde un checkout limpio con:
+
+```bash
+./scripts/codex/setup_cloud.sh
+./scripts/validate.sh
+```
+
+Las dependencias se instalan de forma aislada bajo `.tools/` (ignorado por
+Git). Para ejecuciones separadas:
+
+```bash
+./scripts/test_headless.sh
+./scripts/build_android_debug.sh
+```
+
+El smoke se encuentra en `game/` y el APK debug se genera en
+`builds/android/rpg_prompt0_smoke.apk`.
 
 ## Fuente de verdad
 - `docs/canon/`: canon narrativo.

@@ -22,6 +22,15 @@ Sólo considerar en Prompt 0:
 
 No es obligatorio instalar las cuatro.
 
+Revisión Prompt 0 (sólo lectura):
+- origen: `https://github.com/thedivergentai/GD-Agentic-Skills`;
+- commit revisado: `6a36f189d9c9b53b8c6769fb5c2cce8bfa5ad35c`;
+- candidatas revisadas: `godot-project-foundations`,
+  `godot-gdscript-mastery`, `godot-platform-mobile` y
+  `godot-export-builds`;
+- decisión: no vendorizarlas ni activarlas en Prompt 0: la GDA Skill cubre el
+  tooling exigido y el resto excede el smoke.
+
 Condiciones:
 - leer/revisar antes;
 - project-scoped;

@@ -1,0 +1,24 @@
+; Prompt 0 smoke project. No gameplay systems are present.
+config_version=5
+
+[application]
+config/name="RPG Fantasía Oscura — Prompt 0 Smoke"
+run/main_scene="res://smoke_bootstrap.tscn"
+config/icon="res://icon.svg"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+
+[display/window]
+size/viewport_width=640
+size/viewport_height=360
+size/window_width_override=1280
+size/window_height_override=720
+stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0

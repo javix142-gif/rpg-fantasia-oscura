@@ -7,15 +7,17 @@ Vertical slice:
 **Liria → ataque → consecuencias → Camino Prohibido → Ceniza → primera ruina de Cyrion.**
 
 ## Estado actual
-**PRE-IMPLEMENTACIÓN**
+**PROMPT 0 COMPLETADO**
 
-Canon, sistemas 1–14, dirección visual y plan de vertical slice están definidos.
+Canon, sistemas 1–14, dirección visual y plan de vertical slice están
+definidos. El gate Cloud se cerró sin iniciar gameplay.
 
-Aún no está validado:
-- entorno Godot en Codex Cloud;
-- Android toolchain;
-- GDA;
-- export APK.
+Validado en Cloud:
+- Godot 4.7.2 Standard y export templates 4.7.2;
+- Eclipse Temurin JDK 17.0.20.1+1;
+- Android SDK: command-line tools 15859902, platform-tools, API 36 y Build Tools 36.0.0;
+- CPython 3.13.14, GDA 0.12.0 y GDA Skill project-scoped;
+- proyecto smoke `game/`, validación headless y APK debug no vacío.
 
 ## Stack aprobado
 - Godot 4.7.2 Standard.
@@ -51,14 +53,8 @@ Aún no está validado:
 - skills Godot específicas bajo demanda.
 
 ## Próximo gate
-Ejecutar `PROMPT_0_CODEX_CLOUD.md`.
-
-Debe terminar con:
-- repo organizado;
-- Godot headless;
-- GDA;
-- Android;
-- APK smoke.
+Esperar autorización explícita para iniciar la **Etapa 1**. No crear sistemas,
+escenas de gameplay, quests ni assets finales antes de esa autorización.
 
 ## Regla
-No comenzar Etapa 1 antes de superar Prompt 0.
+Prompt 0 está superado; no comenzar Etapa 1 sin autorización explícita.

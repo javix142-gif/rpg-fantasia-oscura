@@ -14,9 +14,18 @@
     "policy": "verify before install; if changed, document and update this lock"
   },
   "android": {
-    "jdk": "17",
+    "jdk": {
+      "major": "17",
+      "distribution": "Eclipse Temurin 17.0.20.1+1",
+      "linux_x64_sha256": "3808d1d15e3ec6bd5b84057fb5d84c33d8a1536a258146bcea2e603fc726e08e"
+    },
     "target_sdk": 36,
-    "min_sdk_baseline": 28
+    "min_sdk_baseline": 28,
+    "command_line_tools": {
+      "version": "15859902",
+      "linux_sha256": "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
+    },
+    "build_tools": "36.0.0"
   },
   "candidate_addons_not_installed": {
     "gut": "9.7.1",
