@@ -1,0 +1,12 @@
+# GDA CLI + Skill es el baseline inicial.
+# MCP queda deshabilitado.
+
+# Si más adelante se justifica gda-mcp:
+#
+# [mcp_servers.gda-mcp]
+# command = "uvx"
+# args = ["--from", "gda[mcp]==<PIN>", "gda-mcp"]
+#
+# [mcp_servers.gda-mcp.env]
+# GDA_PROJECT = "/absolute/path/to/game"
+# GDA_GODOT = "/absolute/path/to/godot"
