@@ -38,7 +38,7 @@ func _iria_dialogue() -> Dictionary:
 			"start": {"speaker": "Iria", "text": "La plaza está despierta. ¿Puedes ayudarme a saludar a Halven y comprobar que todo está listo?", "conditions": [{"type": "NotFlag", "value": "MQ00_01_COMPLETE"}], "choices": [{"text": "Claro, voy a verlo.", "next": "started", "effects": [{"type": "StartQuest", "value": "MQ00_01"}]}, {"text": "Ahora no.", "next": "later"}]},
 			"started": {"speaker": "Iria", "text": "Gracias. Halven está en su edificio, al este de la plaza. Después vuelve conmigo.", "conditions": [{"type": "ClassEquals", "value": _current_class_id()}], "choices": [{"text": "Entendido.", "next": ""}]},
 			"later": {"speaker": "Iria", "text": "Cuando estés listo, aquí estaré.", "choices": [{"text": "Volveré.", "next": ""}]},
-			"return": {"speaker": "Iria", "text": "La linterna de Halven ya está contigo. Con esto, MQ00_01 queda completa.", "conditions": [{"type": "HasFlag", "value": "MQ00_01_ITEM_RECEIVED"}], "choices": [{"text": "Entregar la linterna.", "next": "complete", "effects": [{"type": "CompleteQuest", "value": "MQ00_01"}]}]},
+			"return": {"speaker": "Iria", "text": "La linterna de Halven ya está contigo. Con esto, el encargo queda completo.", "conditions": [{"type": "HasFlag", "value": "MQ00_01_ITEM_RECEIVED"}], "choices": [{"text": "Entregar la linterna.", "next": "complete", "effects": [{"type": "CompleteQuest", "value": "MQ00_01"}]}]},
 			"complete": {"speaker": "Iria", "text": "Un día sencillo, pero importante. Gracias por cuidar de Liria.", "conditions": [{"type": "QuestCompleted", "value": "MQ00_01"}], "choices": [{"text": "Cerrar diálogo.", "next": ""}]}
 		}
 	}

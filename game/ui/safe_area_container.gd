@@ -5,6 +5,7 @@ extends MarginContainer
 ## Godot control. It keeps thumb controls inside Android cutout insets.
 
 func _ready() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_resolve_margins()
 
 func _notification(what: int) -> void:
@@ -14,11 +15,23 @@ func _notification(what: int) -> void:
 func _resolve_margins() -> void:
 	var viewport_size := get_viewport_rect().size
 	var safe := DisplayServer.get_display_safe_area()
-	if safe.size.x <= 0 or safe.size.y <= 0:
+	var window_size := DisplayServer.window_get_size()
+	if safe.size.x <= 0 or safe.size.y <= 0 or window_size.x <= 0 or window_size.y <= 0:
+		add_theme_constant_override("margin_left", 8)
+		add_theme_constant_override("margin_top", 6)
+		add_theme_constant_override("margin_right", 8)
+		add_theme_constant_override("margin_bottom", 6)
 		return
-	var scale_x := viewport_size.x / 640.0
-	var scale_y := viewport_size.y / 360.0
-	add_theme_constant_override("margin_left", maxi(6, roundi(float(safe.position.x) / maxf(0.01, scale_x))))
-	add_theme_constant_override("margin_top", maxi(4, roundi(float(safe.position.y) / maxf(0.01, scale_y))))
-	add_theme_constant_override("margin_right", maxi(6, roundi(float(640 - (safe.position.x + safe.size.x)) / maxf(0.01, scale_x))))
-	add_theme_constant_override("margin_bottom", maxi(4, roundi(float(360 - (safe.position.y + safe.size.y)) / maxf(0.01, scale_y))))
+	# DisplayServer reports physical pixels while the project layout is the
+	# 640x360 content scale. Convert the insets to the current viewport before
+	# applying them, so notches and gesture bars remain outside touch controls.
+	var scale_x := viewport_size.x / float(window_size.x)
+	var scale_y := viewport_size.y / float(window_size.y)
+	var left := clampi(roundi(float(safe.position.x) * scale_x), 8, 48)
+	var top := clampi(roundi(float(safe.position.y) * scale_y), 6, 36)
+	var right := clampi(roundi(float(window_size.x - (safe.position.x + safe.size.x)) * scale_x), 8, 48)
+	var bottom := clampi(roundi(float(window_size.y - (safe.position.y + safe.size.y)) * scale_y), 6, 36)
+	add_theme_constant_override("margin_left", left)
+	add_theme_constant_override("margin_top", top)
+	add_theme_constant_override("margin_right", right)
+	add_theme_constant_override("margin_bottom", bottom)

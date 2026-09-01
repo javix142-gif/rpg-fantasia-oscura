@@ -58,3 +58,24 @@ No copiar, trazar, recortar o recolorear `references/**`; no mezclar sus
 imágenes con el build. No producir aún ataque, dodge, hurt, KO, VFX, Radan,
 MOR, Centinela, Ceniza o Cyrion. Los placeholders pueden carecer de detalle,
 pero nunca de escala, pivot, orientación, hitbox o composición prevista.
+
+## Integración visual P1.1
+
+La reparación de dispositivo usa tres fuentes propias seleccionadas en
+`art/source/p1_1/selected/`: una escena completa de Liria, una hoja de
+animación del jugador y una familia de NPC. La pipeline las convierte a
+salidas RGBA8 nearest en `game/assets/p1_1/`; el juego consume esas salidas,
+nunca la hoja de preview completa ni material de `references/**`.
+
+- `player_sheet.png`: 8 filas direccionales × 6 frames en celdas 64×64;
+  idle usa dos frames y walk cuatro frames por dirección.
+- `npc_sheet.png`: cinco variantes de 64×64 para Iria, Halven, herrero,
+  comerciante y amigo; los aldeanos reutilizan la última variante.
+- `liria_scene.png`: escena authored de 960×640, escalada con nearest y
+  colocada detrás de capas técnicas; `TileMapLayer` conserva una base de
+  césped real para extensión posterior.
+
+Estado de aprobación: fuentes y salidas fueron inspeccionadas visualmente en
+Cloud; `CHARACTER_MASTER_STATUS=P1_PROVISIONAL` y la aprobación subjetiva en
+dispositivo siguen pendientes. Estas piezas establecen identidad P1.1, no
+arte final.

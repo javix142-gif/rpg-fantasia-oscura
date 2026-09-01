@@ -23,6 +23,7 @@ var inventory_text: Label
 var toast_label: Label
 var joystick: Stage1VirtualJoystick
 var interact_button: Button
+var menu_panel: PanelContainer
 var player: PlayerController
 
 func _state_node() -> Node:
@@ -30,9 +31,11 @@ func _state_node() -> Node:
 
 func _ready() -> void:
 	root_control = Control.new()
+	root_control.name = "SafeContent"
 	root_control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var safe_area := Stage1SafeAreaContainer.new()
+	safe_area.name = "SafeArea"
 	safe_area.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	safe_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(safe_area)
@@ -49,10 +52,10 @@ func _panel(color: Color, border: Color = Color("#8b6a46")) -> PanelContainer:
 	style.bg_color = color
 	style.border_color = border
 	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
+	style.corner_radius_top_left = 7
+	style.corner_radius_top_right = 7
+	style.corner_radius_bottom_left = 7
+	style.corner_radius_bottom_right = 7
 	panel.add_theme_stylebox_override("panel", style)
 	return panel
 
@@ -63,35 +66,45 @@ func _label(text: String, size: int, color: Color) -> Label:
 	result.add_theme_color_override("font_color", color)
 	return result
 
+func _anchor(control: Control, left: float, top: float, right: float, bottom: float, offsets: Array[float]) -> void:
+	control.anchor_left = left
+	control.anchor_top = top
+	control.anchor_right = right
+	control.anchor_bottom = bottom
+	control.offset_left = offsets[0]
+	control.offset_top = offsets[1]
+	control.offset_right = offsets[2]
+	control.offset_bottom = offsets[3]
+
 func _build_status() -> void:
 	status_panel = _panel(Color(0.06, 0.07, 0.1, 0.90))
-	status_panel.position = Vector2(10, 10)
-	status_panel.size = Vector2(188, 66)
+	_anchor(status_panel, 0.0, 0.0, 0.0, 0.0, [8.0, 8.0, 198.0, 72.0])
 	root_control.add_child(status_panel)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 7)
 	status_panel.add_child(row)
 	var portrait := TextureRect.new()
 	portrait.texture = load("res://assets/p1/player_portrait.png") as Texture2D
-	portrait.custom_minimum_size = Vector2(52, 52)
+	portrait.custom_minimum_size = Vector2(48, 48)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(portrait)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 1)
 	row.add_child(column)
-	name_label = _label("Aventurero", 13, Color("#ffe8ad"))
+	name_label = _label("Aventurero", 12, Color("#ffe8ad"))
 	column.add_child(name_label)
-	class_label = _label("Nivel 1", 10, Color("#bac3d6"))
+	class_label = _label("Nivel 1", 9, Color("#bac3d6"))
 	column.add_child(class_label)
-	hp_bar = _bar(Color("#bd4a4a"), 100)
+	hp_bar = _bar(Color("#bd4a4a"), 100, 92)
 	column.add_child(hp_bar)
-	mp_bar = _bar(Color("#4e83b9"), 40)
+	mp_bar = _bar(Color("#4e83b9"), 40, 92)
 	column.add_child(mp_bar)
 
-func _bar(color: Color, max_value: float) -> ProgressBar:
+func _bar(color: Color, max_value: float, width: float) -> ProgressBar:
 	var bar := ProgressBar.new()
-	bar.custom_minimum_size = Vector2(104, 8)
+	bar.custom_minimum_size = Vector2(width, 7)
 	bar.max_value = max_value
 	bar.value = max_value
 	bar.show_percentage = false
@@ -113,88 +126,104 @@ func _bar(color: Color, max_value: float) -> ProgressBar:
 
 func _build_quest() -> void:
 	var panel := _panel(Color(0.07, 0.08, 0.12, 0.86))
-	panel.position = Vector2(218, 10)
-	panel.size = Vector2(254, 56)
+	_anchor(panel, 0.5, 0.0, 0.5, 0.0, [-122.0, 8.0, 122.0, 60.0])
 	root_control.add_child(panel)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 1)
 	panel.add_child(column)
-	quest_title = _label("MQ00_01 · Un día cualquiera", 12, Color("#f0bf5a"))
+	quest_title = _label("Un día cualquiera", 12, Color("#f0bf5a"))
 	column.add_child(quest_title)
-	quest_objective = _label("Habla con Iria en la plaza.", 11, Color("#f5ecd0"))
+	quest_objective = _label("Habla con Iria en la plaza.", 10, Color("#f5ecd0"))
 	quest_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(quest_objective)
 
 func _build_actions() -> void:
-	var menu := Button.new()
-	menu.text = "≡"
-	menu.position = Vector2(586, 10)
-	menu.size = Vector2(42, 34)
-	menu.tooltip_text = "Menú"
-	menu.pressed.connect(func() -> void: menu_pressed.emit())
-	root_control.add_child(menu)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 5)
+	_anchor(actions, 1.0, 0.0, 1.0, 0.0, [-178.0, 8.0, -8.0, 42.0])
+	root_control.add_child(actions)
 	var inventory := Button.new()
 	inventory.text = "Bolsa"
-	inventory.position = Vector2(482, 10)
-	inventory.size = Vector2(74, 34)
+	inventory.custom_minimum_size = Vector2(76, 34)
+	inventory.focus_mode = Control.FOCUS_NONE
 	inventory.pressed.connect(func() -> void: inventory_pressed.emit())
-	root_control.add_child(inventory)
+	actions.add_child(inventory)
+	var menu := Button.new()
+	menu.text = "☰"
+	menu.tooltip_text = "Menú"
+	menu.custom_minimum_size = Vector2(38, 34)
+	menu.focus_mode = Control.FOCUS_NONE
+	menu.pressed.connect(func() -> void: menu_pressed.emit())
+	actions.add_child(menu)
+	menu_panel = _panel(Color(0.06, 0.07, 0.1, 0.96), Color("#c29b5b"))
+	_anchor(menu_panel, 1.0, 0.0, 1.0, 0.0, [-184.0, 48.0, -8.0, 154.0])
+	root_control.add_child(menu_panel)
+	var menu_column := VBoxContainer.new()
+	menu_column.add_theme_constant_override("separation", 4)
+	menu_panel.add_child(menu_column)
+	menu_column.add_child(_label("Menú", 13, Color("#f0bf5a")))
 	var save := Button.new()
-	save.text = "Guardar"
-	save.position = Vector2(482, 48)
-	save.size = Vector2(74, 26)
-	save.add_theme_font_size_override("font_size", 10)
-	save.pressed.connect(func() -> void: save_pressed.emit())
-	root_control.add_child(save)
+	save.text = "Guardar partida"
+	save.focus_mode = Control.FOCUS_NONE
+	save.pressed.connect(func() -> void:
+		menu_panel.visible = false
+		save_pressed.emit())
+	menu_column.add_child(save)
 	var load := Button.new()
-	load.text = "Cargar"
-	load.position = Vector2(560, 48)
-	load.size = Vector2(68, 26)
-	load.add_theme_font_size_override("font_size", 10)
-	load.pressed.connect(func() -> void: load_pressed.emit())
-	root_control.add_child(load)
+	load.text = "Cargar partida"
+	load.focus_mode = Control.FOCUS_NONE
+	load.pressed.connect(func() -> void:
+		menu_panel.visible = false
+		load_pressed.emit())
+	menu_column.add_child(load)
+	var close := Button.new()
+	close.text = "Cerrar"
+	close.focus_mode = Control.FOCUS_NONE
+	close.pressed.connect(func() -> void: menu_panel.visible = false)
+	menu_column.add_child(close)
+	menu_panel.visible = false
 	joystick = Stage1VirtualJoystick.new()
-	joystick.position = Vector2(16, 244)
-	joystick.size = Vector2(112, 112)
+	joystick.name = "VirtualJoystick"
+	_anchor(joystick, 0.0, 1.0, 0.0, 1.0, [10.0, -100.0, 100.0, -10.0])
 	root_control.add_child(joystick)
 	interact_button = Button.new()
-	interact_button.text = "Interactuar"
-	interact_button.position = Vector2(536, 292)
-	interact_button.size = Vector2(96, 42)
-	interact_button.add_theme_font_size_override("font_size", 11)
+	interact_button.name = "InteractionButton"
+	interact_button.text = "Hablar"
+	interact_button.custom_minimum_size = Vector2(106, 52)
+	interact_button.focus_mode = Control.FOCUS_NONE
+	_anchor(interact_button, 1.0, 1.0, 1.0, 1.0, [-114.0, -62.0, -8.0, -8.0])
 	interact_button.pressed.connect(func() -> void: interact_pressed.emit())
 	root_control.add_child(interact_button)
-	prompt_label = _label("", 11, Color("#ffe9a8"))
-	prompt_label.position = Vector2(430, 264)
-	prompt_label.size = Vector2(190, 24)
+	prompt_label = _label("", 10, Color("#ffe9a8"))
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_anchor(prompt_label, 0.45, 1.0, 1.0, 1.0, [-8.0, -92.0, -8.0, -66.0])
 	root_control.add_child(prompt_label)
-	toast_label = _label("", 12, Color("#ffe9a8"))
-	toast_label.position = Vector2(235, 322)
-	toast_label.size = Vector2(200, 24)
+	toast_label = _label("", 11, Color("#ffe9a8"))
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_anchor(toast_label, 0.25, 1.0, 0.75, 1.0, [0.0, -40.0, 0.0, -14.0])
 	root_control.add_child(toast_label)
 
 func _build_inventory() -> void:
 	inventory_panel = _panel(Color(0.06, 0.07, 0.1, 0.96), Color("#c29b5b"))
-	inventory_panel.position = Vector2(168, 72)
-	inventory_panel.size = Vector2(304, 222)
+	_anchor(inventory_panel, 0.5, 0.5, 0.5, 0.5, [-160.0, -116.0, 160.0, 116.0])
 	root_control.add_child(inventory_panel)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
 	inventory_panel.add_child(column)
-	var title := _label("INVENTARIO", 16, Color("#f0bf5a"))
-	column.add_child(title)
-	inventory_text = _label("", 12, Color("#f7eed5"))
+	column.add_child(_label("Bolsa", 16, Color("#f0bf5a")))
+	inventory_text = _label("", 11, Color("#f7eed5"))
 	inventory_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(inventory_text)
 	var close := Button.new()
 	close.text = "Cerrar"
+	close.focus_mode = Control.FOCUS_NONE
 	close.pressed.connect(func() -> void: inventory_panel.visible = false)
 	column.add_child(close)
 	inventory_panel.visible = false
 
 func set_player(target: PlayerController) -> void:
 	player = target
-	if joystick != null:
+	if joystick != null and not joystick.value_changed.is_connected(_on_joystick_value):
 		joystick.value_changed.connect(_on_joystick_value)
 	_refresh_profile()
 
@@ -204,7 +233,10 @@ func _on_joystick_value(value: Vector2) -> void:
 
 func set_interaction_prompt(text: String) -> void:
 	prompt_label.text = text
-	interact_button.modulate = Color.WHITE if not text.is_empty() else Color(0.55, 0.55, 0.60, 0.65)
+	interact_button.disabled = text.is_empty()
+
+func toggle_menu() -> void:
+	menu_panel.visible = not menu_panel.visible
 
 func toggle_inventory() -> void:
 	inventory_panel.visible = not inventory_panel.visible
@@ -218,9 +250,9 @@ func _refresh_inventory() -> void:
 		return
 	var lines: Array[String] = []
 	for id in items.keys():
-		var name := "Linterna de Halven" if id == "ITEM_LANTERN" else "Ficha de Liria"
-		lines.append("• %s × %d" % [name, int(items[id])])
-	inventory_text.text = "\n".join(lines) + "\n\nLos objetos de misión no ocupan equipo."
+		var item_name := "Linterna de Halven" if id == "ITEM_LANTERN" else "Ficha de Liria"
+		lines.append("• %s × %d" % [item_name, int(items[id])])
+	inventory_text.text = "\n".join(lines) + "\n\nObjetos de misión"
 
 func _refresh_profile() -> void:
 	var state := _state_node().get("state") as Dictionary
@@ -236,9 +268,10 @@ func refresh_quest() -> void:
 		"NOT_STARTED":
 			quest_objective.text = "Habla con Iria en la plaza."
 		"ACTIVE":
-			quest_objective.text = "Habla con Halven en el edificio del este." if int(state.call("quest_stage", "MQ00_01")) < 3 else "Regresa con Iria y entrega la linterna."
-		"COMPLETE": quest_objective.text = "Completada · Liria sigue en calma."
-	quest_title.text = "MQ00_01 · Un día cualquiera · " + status
+			quest_objective.text = "Visita a Halven, al este de la plaza." if int(state.call("quest_stage", "MQ00_01")) < 3 else "Regresa con Iria y entrega la linterna."
+		"COMPLETE":
+			quest_objective.text = "La mañana sigue en calma."
+	quest_title.text = "Un día cualquiera"
 
 func notify(message: String) -> void:
 	toast_label.text = message

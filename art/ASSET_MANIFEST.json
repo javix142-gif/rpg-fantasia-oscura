@@ -33,6 +33,150 @@
 			"type": "environment_family",
 			"visual_qa_status": "P1_PROVISIONAL"
 		},
+		"ASSET_P11_LIRIA_GROUND": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				32.0,
+				32.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_P11_LIRIA_GROUND",
+			"mirror_source": null,
+			"output_path": "game/assets/p1_1/liria_ground_tile.png",
+			"output_sha256": "26e7f675ddced6c52bfd3a2252c8ab047800f9899a9123261d49e93e1e665a77",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"crop_ground",
+				"nearest_neighbor",
+				"tile_source"
+			],
+			"provenance": "Derived from selected P1.1 Liria scene source",
+			"source_path": "art/source/p1_1/selected/liria_scene_source.png",
+			"source_sha256": "0d241b0fce59df1f8d303474459369f2c632318be403b18a2b8162b07152487d",
+			"stage": "P1.1",
+			"status": "INTEGRATED_IN_GAME",
+			"type": "tile_ground",
+			"visual_qa_status": "VISUALLY_VALIDATED"
+		},
+		"ASSET_P11_LIRIA_SCENE": {
+			"cell_size": [
+				32.0,
+				32.0
+			],
+			"dimensions": [
+				960.0,
+				640.0
+			],
+			"directions": [],
+			"frame_count": 1.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_P11_LIRIA_SCENE",
+			"mirror_source": null,
+			"output_path": "game/assets/p1_1/liria_scene.png",
+			"output_sha256": "f9b7ae58f0143114e55f5cc60a47df94cc873410cca66f51d9a3be802ddee347",
+			"pivot": [
+				0.0,
+				0.0
+			],
+			"processing": [
+				"rgba8",
+				"canvas_960x640",
+				"nearest_neighbor"
+			],
+			"provenance": "OpenAI native Image Generation, P1.1 Liria scene repair, 2026-09-01",
+			"source_path": "art/source/p1_1/selected/liria_scene_source.png",
+			"source_sha256": "0d241b0fce59df1f8d303474459369f2c632318be403b18a2b8162b07152487d",
+			"stage": "P1.1",
+			"status": "INTEGRATED_IN_GAME",
+			"type": "environment_scene",
+			"visual_qa_status": "VISUALLY_VALIDATED"
+		},
+		"ASSET_P11_NPC_SHEET": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				320.0,
+				64.0
+			],
+			"directions": [
+				"SE"
+			],
+			"frame_count": 5.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_P11_NPC_SHEET",
+			"mirror_source": null,
+			"output_path": "game/assets/p1_1/npc_sheet.png",
+			"output_sha256": "208e3ac8dc2ce077098e4778dc2d6c027301a6c8e5dab316f5e277a8b806aeae",
+			"pivot": [
+				32.0,
+				60.0
+			],
+			"processing": [
+				"crop_transparent",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "OpenAI native Image Generation, P1.1 NPC family, 2026-09-01",
+			"source_path": "art/source/p1_1/selected/npc_family_source.png",
+			"source_sha256": "ffc051c847f76db248bce4c4da1edc0dc985d55e5d5a4a31414f85b3b934986a",
+			"stage": "P1.1",
+			"status": "INTEGRATED_IN_GAME",
+			"type": "npc_sprite_sheet",
+			"visual_qa_status": "VISUALLY_VALIDATED"
+		},
+		"ASSET_P11_PLAYER_SHEET": {
+			"cell_size": [
+				64.0,
+				64.0
+			],
+			"dimensions": [
+				384.0,
+				512.0
+			],
+			"directions": [
+				"N",
+				"NE",
+				"E",
+				"SE",
+				"S",
+				"SW",
+				"W",
+				"NW"
+			],
+			"frame_count": 48.0,
+			"generation_attempts": 1.0,
+			"id": "ASSET_P11_PLAYER_SHEET",
+			"mirror_source": null,
+			"output_path": "game/assets/p1_1/player_sheet.png",
+			"output_sha256": "06d29375cd266c1d001c607f662135fd0ec0e90c742ced2ab6a087c9a67fd88f",
+			"pivot": [
+				32.0,
+				60.0
+			],
+			"processing": [
+				"checker_background_key",
+				"crop_transparent",
+				"canvas_64x64",
+				"nearest_neighbor"
+			],
+			"provenance": "OpenAI native Image Generation, P1.1 player animation sheet, 2026-09-01",
+			"source_path": "art/source/p1_1/selected/player_animation_source.png",
+			"source_sha256": "ed0634ca6fef85b7edcbc956c12ecae3f257973aae4ac50457e87bcec8e2470c",
+			"stage": "P1.1",
+			"status": "INTEGRATED_IN_GAME",
+			"type": "player_animation_sheet",
+			"visual_qa_status": "VISUALLY_VALIDATED"
+		},
 		"ASSET_PLAYER_BASE": {
 			"cell_size": [
 				64.0,
@@ -128,7 +272,7 @@
 			"id": "ASSET_PLAYER_IDLE",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -232,7 +376,7 @@
 			"id": "ASSET_PLAYER_NW_MIRROR",
 			"mirror_source": "ASSET_PLAYER_NE",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -336,7 +480,7 @@
 			"id": "ASSET_PLAYER_SWORD",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -369,7 +513,7 @@
 			"id": "ASSET_PLAYER_SW_MIRROR",
 			"mirror_source": "ASSET_PLAYER_SE",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -410,7 +554,7 @@
 			"id": "ASSET_PLAYER_WALK",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -444,7 +588,7 @@
 			"id": "ASSET_PLAYER_W_MIRROR",
 			"mirror_source": "ASSET_PLAYER_E",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "",
+			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
 			"pivot": [
 				32.0,
 				56.0
@@ -481,7 +625,7 @@
 			"id": "CHR_HALVEN",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -517,7 +661,7 @@
 			"id": "CHR_IRIA",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -553,7 +697,7 @@
 			"id": "CHR_MERCHANT",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -589,7 +733,7 @@
 			"id": "CHR_SMITH",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -625,7 +769,7 @@
 			"id": "CHR_VILLAGER_A",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -661,7 +805,7 @@
 			"id": "CHR_VILLAGER_B",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -697,7 +841,7 @@
 			"id": "CHR_VILLAGER_C",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -733,7 +877,7 @@
 			"id": "CHR_VILLAGER_D",
 			"mirror_source": null,
 			"output_path": "game/world/npc.gd",
-			"output_sha256": "",
+			"output_sha256": "ebd68f7e13dbcaf67192c2701c971521eea4c4fed4c92f12e5fbaf964d2c94d4",
 			"pivot": [
 				32.0,
 				56.0
@@ -764,7 +908,7 @@
 			"id": "ENV_BUSH_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				32.0,
 				56.0
@@ -795,7 +939,7 @@
 			"id": "ENV_HOUSE_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -827,7 +971,7 @@
 			"id": "ENV_HOUSE_B",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -858,7 +1002,7 @@
 			"id": "ENV_LIRIA_PROCEDURAL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -890,7 +1034,7 @@
 			"id": "ENV_MARKET_STALL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -922,7 +1066,7 @@
 			"id": "ENV_SMITHY",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -954,7 +1098,7 @@
 			"id": "ENV_TREE_OAK_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "a95e870c4c40d2968e162bb23b39357b797f1990cd0c3da3959dfe08e1a88a3f",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				64.0,
 				118.0
@@ -986,7 +1130,7 @@
 			"id": "INTERACTION_TARGET",
 			"mirror_source": null,
 			"output_path": "game/world/interaction_target.gd",
-			"output_sha256": "",
+			"output_sha256": "08df1cc97896320bca0da82945cd4636e5e542fdc689b00e0e3d7e4116dfc135",
 			"pivot": [
 				16.0,
 				28.0
@@ -1019,7 +1163,7 @@
 			"id": "ITEM_LANTERN",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "",
+			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
 			"pivot": [
 				12.0,
 				20.0
@@ -1085,7 +1229,7 @@
 			"id": "PROP_BARREL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				16.0,
 				28.0
@@ -1116,7 +1260,7 @@
 			"id": "PROP_BENCH",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				32.0,
 				28.0
@@ -1147,7 +1291,7 @@
 			"id": "PROP_FOUNTAIN",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				48.0,
 				56.0
@@ -1178,7 +1322,7 @@
 			"id": "PROP_LAMP",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				16.0,
 				56.0
@@ -1209,7 +1353,7 @@
 			"id": "PROP_SMITH_ANVIL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				32.0,
 				28.0
@@ -1272,7 +1416,7 @@
 			"id": "TILE_DIRT_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -1304,7 +1448,7 @@
 			"id": "TILE_GRASS_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "",
+			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
 			"pivot": [
 				0.0,
 				0.0
@@ -1336,7 +1480,7 @@
 			"id": "UI_CLASS_ICONS",
 			"mirror_source": null,
 			"output_path": "game/main.gd",
-			"output_sha256": "",
+			"output_sha256": "9b96240ca5c665eaea5d02f24ebe17ab65b89a44ff8b74522e2bc644b4745612",
 			"pivot": [
 				12.0,
 				12.0
@@ -1368,7 +1512,7 @@
 			"id": "UI_DIALOGUE_PANEL",
 			"mirror_source": null,
 			"output_path": "game/ui/dialogue_panel.gd",
-			"output_sha256": "",
+			"output_sha256": "da82a61afa0c19952570345935a2a262b509049ac6248802e4f434f4bc152be9",
 			"pivot": [
 				0.0,
 				0.0
@@ -1400,7 +1544,7 @@
 			"id": "UI_INTERACTION_BUTTON",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "",
+			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
 			"pivot": [
 				48.0,
 				21.0
@@ -1432,7 +1576,7 @@
 			"id": "UI_JOYSTICK",
 			"mirror_source": null,
 			"output_path": "game/ui/virtual_joystick.gd",
-			"output_sha256": "",
+			"output_sha256": "1ed9cf229b5d6be51eb989be8f0aaada33fd5009743807969fa927996389ac5f",
 			"pivot": [
 				56.0,
 				56.0
@@ -1464,7 +1608,7 @@
 			"id": "UI_P1_HUD",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "",
+			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1496,7 +1640,7 @@
 			"id": "UI_STATUS_PANEL",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "",
+			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
 			"pivot": [
 				0.0,
 				0.0

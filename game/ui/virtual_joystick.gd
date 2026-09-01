@@ -10,7 +10,7 @@ var _pointer_id := -1
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size = Vector2(108, 108)
+	custom_minimum_size = Vector2(90, 90)
 	queue_redraw()
 
 func _gui_input(event: InputEvent) -> void:

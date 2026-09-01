@@ -7,11 +7,12 @@ Vertical slice:
 **Liria → ataque → consecuencias → Camino Prohibido → Ceniza → primera ruina de Cyrion.**
 
 ## Estado actual
-**PROMPT 0 COMPLETADO — PROMPT 1 COMPLETADO**
+**PROMPT 0 COMPLETADO — PROMPT 1 COMPLETADO — P1.1 CLOUD COMPLETADO**
 
 Canon, sistemas 1–14, dirección visual y plan de vertical slice están
-definidos. La primera versión jugable de Liria normal está implementada sin
-iniciar el ataque ni ningún sistema de P2.
+definidos. La primera versión jugable de Liria normal está implementada y la
+reparación P1.1 corrige el gate cloud de dispositivo/visual sin iniciar el
+ataque ni ningún sistema de P2.
 
 Validado en Cloud:
 - Godot 4.7.2 Standard y export templates 4.7.2;
@@ -26,10 +27,20 @@ Validado en Cloud:
 - Liria compacta con jugador `CharacterBody2D`, ocho direcciones, joystick,
   cámara, NPC y HUD responsive;
 - gate Stage 1 y APK `builds/android/rpg_stage1_liria.apk` validados.
+- reparación P1.1: orientación Android landscape explícita, viewport expand y
+  safe area responsive;
+- escena authored de Liria, sprites NPC y hoja AnimatedSprite2D del jugador
+  integrados mediante la pipeline determinista;
+- interacción `Area2D` pública, E2E de MQ00_01 con botones de touch y layout
+  comprobado en 16:9 y ratio ancho;
+- APK P1.1 `builds/android/rpg_stage1_liria_p11.apk` validado con
+  `screenOrientation=0` y `targetSdkVersion=36`.
 
 Pendientes de validación manual: instalación/sensación en dispositivo
-Android y aprobación visual del usuario. El personaje y el arte de P1 son
-provisionales; no se declaran arte definitivo.
+Android, safe area física, background/resume y aprobación visual del usuario.
+`DEVICE_QA=PENDING`, `USER_VISUAL_APPROVAL=PENDING` y
+`PROMPT_1_REAL=PENDING`. El personaje y el arte de P1/P1.1 son provisionales;
+no se declaran arte definitivo.
 
 ## Stack aprobado
 - Godot 4.7.2 Standard.
@@ -65,9 +76,11 @@ provisionales; no se declaran arte definitivo.
 - skills Godot específicas bajo demanda.
 
 ## Próximo gate
-**P2 — Ataque de Liria + combate ARPG.** Requiere una autorización explícita
-del usuario. No comenzar P2 automáticamente.
+Completar la prueba física y la aprobación visual de P1.1. Sólo después de
+esa aceptación y de una autorización explícita podrá abrirse **P2 — Ataque de
+Liria + combate ARPG**. No comenzar P2 automáticamente.
 
 ## Regla
-P1 está superado; el ataque, el combate ARPG y los sistemas posteriores no
-están implementados.
+P1 cloud y P1.1 cloud están superados; el gate real de dispositivo sigue
+pendiente. El ataque, el combate ARPG y los sistemas posteriores no están
+implementados. `LISTO_PARA_PROMPT_2=NO`.

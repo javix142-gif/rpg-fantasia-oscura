@@ -8,7 +8,6 @@ var world: VillageWorld
 var player: PlayerController
 var hud: Stage1Hud
 var dialogue: DialoguePanel
-var nearest_npc: VillageNpc
 var name_input: LineEdit
 var class_picker: OptionButton
 
@@ -20,17 +19,22 @@ func _save_service() -> Node:
 
 func _ready() -> void:
 	set_process(true)
+	_configure_display_contract()
 	_show_menu()
 
+func _configure_display_contract() -> void:
+	# Godot 4.7.2 maps SCREEN_LANDSCAPE to Android screenOrientation=0. The
+	# explicit runtime call complements the project/export settings on devices
+	# that launch while the OS is still locked to portrait.
+	if OS.has_feature("android"):
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_LANDSCAPE)
+	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+
 func _process(_delta: float) -> void:
-	if mode != "world" or player == null or world == null:
+	if mode != "world" or player == null:
 		return
-	var candidate := world.get_nearest_npc(player.global_position, 76.0)
-	if candidate != nearest_npc:
-		nearest_npc = candidate
-		hud.set_interaction_prompt(candidate.prompt_text() if candidate != null else "")
 	if Input.is_action_just_pressed("interact"):
-		_interact()
+		_request_interaction()
 	if Input.is_action_just_pressed("inventory"):
 		hud.toggle_inventory()
 	if InputMap.has_action("save_game") and Input.is_action_just_pressed("save_game"):
@@ -51,7 +55,6 @@ func _show_menu() -> void:
 	player = null
 	hud = null
 	dialogue = null
-	nearest_npc = null
 	_clear_view()
 	queue_redraw()
 	var title := Label.new()
@@ -63,26 +66,26 @@ func _show_menu() -> void:
 	title.add_theme_color_override("font_color", Color("#f0c56d"))
 	add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = "Liria · prólogo jugable · P1 provisional"
+	subtitle.text = "Un prólogo tranquilo en Liria"
 	subtitle.position = Vector2(0, 85)
 	subtitle.size = Vector2(640, 24)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", Color("#b6c6b4"))
 	add_child(subtitle)
-	var panel := _menu_panel(Vector2(188, 118), Vector2(264, 200))
+	var panel := _menu_panel(Vector2(170, 118), Vector2(264, 200))
 	add_child(panel)
 	var visual_preview := TextureRect.new()
-	visual_preview.texture = load("res://assets/p1/liria_kit.png") as Texture2D
-	visual_preview.position = Vector2(474, 122)
-	visual_preview.size = Vector2(150, 100)
+	visual_preview.texture = load("res://assets/p1_1/liria_scene.png") as Texture2D
+	visual_preview.position = Vector2(454, 122)
+	visual_preview.size = Vector2(172, 114)
 	visual_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	visual_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	visual_preview.modulate = Color(1.0, 1.0, 1.0, 0.68)
+	visual_preview.modulate = Color(1.0, 1.0, 1.0, 0.86)
 	visual_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(visual_preview)
 	var column := VBoxContainer.new()
-	column.position = Vector2(208, 132)
+	column.position = Vector2(190, 132)
 	column.size = Vector2(224, 170)
 	column.add_theme_constant_override("separation", 8)
 	add_child(column)
@@ -110,7 +113,7 @@ func _show_menu() -> void:
 	load_button.pressed.connect(_load_game)
 	column.add_child(load_button)
 	var hint := Label.new()
-	hint.text = "Teclado: WASD / flechas · E interactúa"
+	hint.text = "WASD / flechas · E o botón Hablar"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 10)
 	hint.add_theme_color_override("font_color", Color("#99a9aa"))
@@ -181,12 +184,13 @@ func _load_game() -> void:
 func _show_world() -> void:
 	mode = "world"
 	_clear_view()
-	queue_redraw()
 	world = VillageWorld.new()
 	add_child(world)
 	player = PlayerController.new()
 	player.global_position = _game_state().call("get_position")
 	world.add_child(player)
+	player.interaction_target_changed.connect(_on_interaction_target_changed)
+	player.interaction_requested.connect(_on_interaction_requested)
 	var camera := Camera2D.new()
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 6.0
@@ -198,31 +202,49 @@ func _show_world() -> void:
 	hud = Stage1Hud.new()
 	add_child(hud)
 	hud.set_player(player)
-	hud.interact_pressed.connect(_interact)
+	hud.interact_pressed.connect(_request_interaction)
 	hud.inventory_pressed.connect(hud.toggle_inventory)
 	hud.save_pressed.connect(_save_game)
 	hud.load_pressed.connect(_load_game)
-	hud.menu_pressed.connect(_show_menu)
+	hud.menu_pressed.connect(hud.toggle_menu)
 	dialogue = DialoguePanel.new()
-	dialogue.position = Vector2(92, 250)
-	dialogue.size = Vector2(456, 100)
+	dialogue.anchor_left = 0.14
+	dialogue.anchor_top = 1.0
+	dialogue.anchor_right = 0.86
+	dialogue.anchor_bottom = 1.0
+	dialogue.offset_left = 0.0
+	dialogue.offset_top = -116.0
+	dialogue.offset_right = 0.0
+	dialogue.offset_bottom = -8.0
+	dialogue.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	dialogue.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	dialogue.z_index = 50
 	add_child(dialogue)
 	dialogue.closed.connect(_dialogue_closed)
 	hud.refresh_quest()
+	_on_interaction_target_changed(player.current_interaction_target)
+
+func _on_interaction_target_changed(target: InteractionTarget) -> void:
+	if hud == null:
+		return
+	hud.set_interaction_prompt(target.prompt if target != null else "")
+
+func _request_interaction() -> void:
+	if player == null or not player.request_interaction():
+		if hud != null:
+			hud.notify("Acércate a un vecino para hablar")
 
 func _interact() -> void:
-	if dialogue != null and dialogue.visible:
-		return
-	if nearest_npc == null and player != null and world != null:
-		nearest_npc = world.get_nearest_npc(player.global_position, 76.0)
-	if nearest_npc == null:
-		if hud != null:
-			hud.notify("Acércate a un vecino para interactuar")
+	# Compatibility wrapper for tools; the public path remains PlayerController
+	# request_interaction(), which is also what the touch button invokes.
+	_request_interaction()
+
+func _on_interaction_requested(target: InteractionTarget) -> void:
+	if target == null or dialogue == null or dialogue.visible:
 		return
 	if player != null:
 		player.set_physics_process(false)
-	dialogue.open_actor(nearest_npc.actor_id)
+	dialogue.open_actor(target.target_id)
 
 func _dialogue_closed() -> void:
 	if player != null:
@@ -238,9 +260,9 @@ func _save_game() -> void:
 	if hud != null:
 		hud.notify("Partida guardada" if ok else "No se pudo guardar")
 
-func _menu_panel(position: Vector2, panel_size: Vector2) -> PanelContainer:
+func _menu_panel(panel_position: Vector2, panel_size: Vector2) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.position = position
+	panel.position = panel_position
 	panel.size = panel_size
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.08, 0.09, 0.13, 0.94)
