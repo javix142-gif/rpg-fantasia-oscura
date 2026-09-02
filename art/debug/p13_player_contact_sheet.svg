@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="720" viewBox="0 0 920 720">
+  <rect width="920" height="720" fill="#101820"/>
+  <text x="20" y="28" fill="#f0c56d" font-family="sans-serif" font-size="18" font-weight="bold">P1.3 PLAYER CONTACT SHEET</text>
+  <text x="20" y="50" fill="#b7c2bb" font-family="sans-serif" font-size="13">Idle: N · NE · E · SE · S · SW · W · NW   |   Walk: N · NE · E · SE · S · SW · W · NW</text>
+  <image x="20" y="68" width="880" height="632" preserveAspectRatio="none" href="p13_player_contact_sheet.png"/>
+</svg>

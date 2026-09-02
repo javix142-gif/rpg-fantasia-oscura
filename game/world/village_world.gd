@@ -8,6 +8,11 @@ var npcs: Array[VillageNpc] = []
 var tile_layer: TileMapLayer
 var visual_scene: Sprite2D
 var collision_layer: Node2D
+var world_props_layer: Node2D
+var foreground_layer: Node2D
+var interactables_layer: Node2D
+var npc_layer: Node2D
+var ambient_fx_layer: Node2D
 var _collision_catalog: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -24,7 +29,8 @@ func _create_tile_layer() -> void:
 	# A real TileMapLayer is kept as the extensible ground source. The authored
 	# scene sits above it, while later stages can replace individual cells.
 	tile_layer = TileMapLayer.new()
-	tile_layer.name = "GroundTileMapLayer"
+	tile_layer.name = "Ground"
+	tile_layer.set_meta("layer_role", "ground")
 	tile_layer.z_index = -20
 	var tile_set := TileSet.new()
 	tile_set.tile_size = Vector2i(32, 32)
@@ -41,7 +47,8 @@ func _create_tile_layer() -> void:
 
 func _create_visual_scene() -> void:
 	visual_scene = Sprite2D.new()
-	visual_scene.name = "LiriaAuthoredScene"
+	visual_scene.name = "AuthoredBackground"
+	visual_scene.set_meta("legacy_scene_name", "LiriaAuthoredScene")
 	visual_scene.texture = load("res://assets/p1_1/liria_scene.png") as Texture2D
 	visual_scene.centered = false
 	visual_scene.position = Vector2.ZERO
@@ -50,13 +57,35 @@ func _create_visual_scene() -> void:
 	add_child(visual_scene)
 
 func _create_render_layers() -> void:
-	for layer_name in ["PathsLayer", "DecorationLayer", "CollisionLayer", "ForegroundLayer"]:
-		var layer := Node2D.new()
-		layer.name = layer_name
-		layer.y_sort_enabled = layer_name in ["DecorationLayer", "ForegroundLayer"]
-		add_child(layer)
-		if layer_name == "CollisionLayer":
-			collision_layer = layer
+	var paths_layer := Node2D.new()
+	paths_layer.name = "PathsLayer"
+	add_child(paths_layer)
+	world_props_layer = Node2D.new()
+	world_props_layer.name = "WorldProps"
+	world_props_layer.y_sort_enabled = true
+	add_child(world_props_layer)
+	collision_layer = Node2D.new()
+	collision_layer.name = "WorldCollision"
+	collision_layer.set_meta("legacy_layer_name", "CollisionLayer")
+	add_child(collision_layer)
+	foreground_layer = Node2D.new()
+	foreground_layer.name = "Foreground"
+	foreground_layer.y_sort_enabled = true
+	add_child(foreground_layer)
+	interactables_layer = Node2D.new()
+	interactables_layer.name = "Interactables"
+	add_child(interactables_layer)
+	npc_layer = Node2D.new()
+	npc_layer.name = "NPC"
+	npc_layer.y_sort_enabled = true
+	add_child(npc_layer)
+	ambient_fx_layer = Node2D.new()
+	ambient_fx_layer.name = "AmbientFX"
+	add_child(ambient_fx_layer)
+	var foreground_accents := LiriaForeground.new()
+	foreground_layer.add_child(foreground_accents)
+	var ambient_fx := LiriaAmbientFx.new()
+	ambient_fx_layer.add_child(ambient_fx)
 
 func _create_boundaries() -> void:
 	_add_rect_blocker("PERIMETER_NORTH", Vector2(480, -8), Vector2(960, 32), "boundary")
@@ -93,9 +122,18 @@ func _create_scene_collisions() -> void:
 	# become an arbitrary invisible wall around the fountain.
 	_add_rect_blocker("FENCE_EAST_TOP_WEST", Vector2(540, 426), Vector2(100, 10), "fence")
 	_add_rect_blocker("FENCE_EAST_TOP_EAST", Vector2(752, 426), Vector2(176, 10), "fence")
-	_add_rect_blocker("FENCE_EAST_LEFT", Vector2(438, 500), Vector2(10, 142), "fence")
+	# The upper-left corner is the visible garden entrance. Starting this rail at
+	# y=500 leaves the authored plaza-to-gate corridor open instead of trapping
+	# the normal spawn behind an invisible vertical wall.
+	_add_rect_blocker("FENCE_EAST_LEFT", Vector2(438, 570), Vector2(10, 142), "fence")
 	_add_rect_blocker("FENCE_EAST_RIGHT", Vector2(850, 500), Vector2(10, 142), "fence")
 	_add_rect_blocker("FENCE_EAST_BOTTOM", Vector2(644, 578), Vector2(402, 10), "fence")
+	# Raised beds are solid only on their visible wooden/crop footprints. The
+	# open soil corridors and gates remain traversable for the route tests.
+	_add_rect_blocker("GARDEN_WEST_RAISED_BED", Vector2(126, 469), Vector2(78, 22), "garden")
+	_add_rect_blocker("GARDEN_WEST_TOOL_SHED", Vector2(70, 440), Vector2(26, 26), "garden")
+	_add_rect_blocker("GARDEN_EAST_BEDS_NORTH", Vector2(705, 468), Vector2(154, 24), "garden")
+	_add_rect_blocker("GARDEN_EAST_BEDS_SOUTH", Vector2(695, 533), Vector2(176, 24), "garden")
 
 	_add_circle_blocker("TREE_ORCHARD_TRUNK", Vector2(91, 383), 18.0, "tree")
 	_add_circle_blocker("TREE_NORTH_TRUNK", Vector2(566, 82), 18.0, "tree")
@@ -167,9 +205,27 @@ func _create_npcs() -> void:
 func _add_npc(actor_id: String, display_name: String, role: String, spawn_position: Vector2, body_color: Color, accent: Color, accessory: String = "") -> void:
 	var npc := VillageNpc.new()
 	npc.setup(actor_id, display_name, role, spawn_position, body_color, accent, accessory)
-	add_child(npc)
+	npc_layer.add_child(npc)
 	npcs.append(npc)
 	npc_created.emit(npc)
+
+func update_quest_markers(status: String, stage: int) -> VillageNpc:
+	var target_id := ""
+	var marker_kind := ""
+	match status:
+		"NOT_STARTED":
+			target_id = "NPC_IRIA"
+			marker_kind = "!"
+		"ACTIVE":
+			if stage < 3:
+				target_id = "NPC_HALVEN"
+				marker_kind = "!"
+			else:
+				target_id = "NPC_IRIA"
+				marker_kind = "?"
+	for npc in npcs:
+		npc.set_quest_marker(marker_kind if npc.actor_id == target_id else "")
+	return get_npc(target_id)
 
 func get_nearest_npc(position: Vector2, radius: float) -> VillageNpc:
 	var nearest: VillageNpc

@@ -6,6 +6,7 @@ signal interaction_target_changed(target: InteractionTarget)
 signal interaction_requested(target: InteractionTarget)
 
 const SPEED: float = 124.0
+const ACTOR_VISUAL_SCALE := 0.90
 const DIRECTIONS: Array[String] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 # The atlas is authored with one stable 64x64 row per direction.  Direction
 # changes are driven by the same vector that drives movement; no runtime
@@ -52,7 +53,11 @@ func _build_shadow() -> void:
 func _build_animated_sprite() -> void:
 	_sprite = AnimatedSprite2D.new()
 	_sprite.name = "PlayerAnimatedSprite"
-	_sprite.position = Vector2(0, -30)
+	# Player and NPC sheets share the same 52x54 fit envelope. A restrained
+	# display scale keeps the protagonist readable without making it feel
+	# imported from a different perspective or pixel density.
+	_sprite.position = Vector2(0, -28)
+	_sprite.scale = Vector2.ONE * ACTOR_VISUAL_SCALE
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var sheet := load("res://assets/p1_1/player_sheet.png") as Texture2D
 	var frames := SpriteFrames.new()

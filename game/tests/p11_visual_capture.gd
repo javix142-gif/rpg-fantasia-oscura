@@ -46,6 +46,7 @@ func _run() -> void:
 		await process_frame
 	_capture("dialogue")
 	main.dialogue._close()
+	await create_timer(0.22).timeout
 	game_state.call("add_item", "ITEM_LANTERN", 1)
 	main.hud.toggle_inventory()
 	await process_frame

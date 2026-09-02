@@ -8,10 +8,10 @@ func open_for_actor(actor_id: String) -> Dictionary:
 	match actor_id:
 		"NPC_IRIA": return _iria_dialogue()
 		"NPC_HALVEN": return _halven_dialogue()
-		"NPC_SMITH": return {"id": "DIALOGUE_SMITH", "start": "smith", "nodes": {"smith": {"speaker": "Bram", "text": "El yunque está caliente. Cuando vuelvas, revisamos esa linterna.", "choices": [{"text": "Gracias.", "next": ""}]}}}
-		"NPC_MERCHANT": return {"id": "DIALOGUE_MERCHANT", "start": "merchant", "nodes": {"merchant": {"speaker": "Nella", "text": "Tengo fruta fresca y buenos precios. Hoy sólo estamos aprendiendo el camino.", "choices": [{"text": "Hasta luego.", "next": ""}]}}}
-		"NPC_FRIEND": return {"id": "DIALOGUE_FRIEND", "start": "friend", "nodes": {"friend": {"speaker": "Tomas", "text": "Liria se siente tranquila esta mañana. Aprovecha para conocer sus caminos.", "choices": [{"text": "Lo haré.", "next": ""}]}}}
-		_: return {"id": "DIALOGUE_AMBIENT", "start": "hello", "nodes": {"hello": {"speaker": "Vecino", "text": "Qué buen día para trabajar en Liria.", "choices": [{"text": "Adiós.", "next": ""}]}}}
+		"NPC_SMITH": return {"id": "DIALOGUE_SMITH", "start": "smith", "nodes": {"smith": {"speaker": "Bram", "text": "El fuego está encendido y el yunque no espera. Si necesitas herramientas, aquí estaré.", "choices": [{"text": "Buen trabajo.", "next": ""}]}}}
+		"NPC_MERCHANT": return {"id": "DIALOGUE_MERCHANT", "start": "merchant", "nodes": {"merchant": {"speaker": "Nella", "text": "Tengo fruta fresca y buenos precios. La plaza siempre sabe cuándo empieza un día tranquilo.", "choices": [{"text": "Hasta luego.", "next": ""}]}}}
+		"NPC_FRIEND": return {"id": "DIALOGUE_FRIEND", "start": "friend", "nodes": {"friend": {"speaker": "Tomas", "text": "Liria se siente tranquila esta mañana. El camino junto a la fuente suele estar despejado.", "choices": [{"text": "Lo tendré en cuenta.", "next": ""}]}}}
+		_: return {"id": "DIALOGUE_AMBIENT", "start": "hello", "nodes": {"hello": {"speaker": "Vecino", "text": "Qué buen día para trabajar en Liria. Hasta el viento parece de buen humor.", "choices": [{"text": "Adiós.", "next": ""}]}}}
 
 func node_for(dialogue: Dictionary, node_id: String) -> Dictionary:
 	var nodes: Dictionary = dialogue.get("nodes", {})
@@ -38,7 +38,7 @@ func _iria_dialogue() -> Dictionary:
 			"start": {"speaker": "Iria", "text": "La plaza está despierta. ¿Puedes ayudarme a saludar a Halven y comprobar que todo está listo?", "conditions": [{"type": "NotFlag", "value": "MQ00_01_COMPLETE"}], "choices": [{"text": "Claro, voy a verlo.", "next": "started", "effects": [{"type": "StartQuest", "value": "MQ00_01"}]}, {"text": "Ahora no.", "next": "later"}]},
 			"started": {"speaker": "Iria", "text": "Gracias. Halven está en su edificio, al este de la plaza. Después vuelve conmigo.", "conditions": [{"type": "QuestActive", "value": "MQ00_01"}, {"type": "NotFlag", "value": "MQ00_01_ITEM_RECEIVED"}], "choices": [{"text": "Entendido.", "next": ""}]},
 			"later": {"speaker": "Iria", "text": "Cuando estés listo, aquí estaré.", "choices": [{"text": "Volveré.", "next": ""}]},
-			"return": {"speaker": "Iria", "text": "La linterna de Halven ya está contigo. Con esto, el encargo queda completo.", "conditions": [{"type": "QuestActive", "value": "MQ00_01"}, {"type": "HasFlag", "value": "MQ00_01_ITEM_RECEIVED"}, {"type": "HasItem", "value": "ITEM_LANTERN"}], "choices": [{"text": "Entregar la linterna.", "next": "complete", "effects": [{"type": "CompleteQuest", "value": "MQ00_01"}]}]},
+			"return": {"speaker": "Iria", "text": "La linterna de Halven ya está contigo. Déjamela y podremos dar el encargo por terminado.", "conditions": [{"type": "QuestActive", "value": "MQ00_01"}, {"type": "HasFlag", "value": "MQ00_01_ITEM_RECEIVED"}, {"type": "HasItem", "value": "ITEM_LANTERN"}], "choices": [{"text": "Entregar la linterna.", "next": "complete", "effects": [{"type": "CompleteQuest", "value": "MQ00_01"}, {"type": "RemoveItem", "value": "ITEM_LANTERN", "amount": 1}]}]},
 			"complete": {"speaker": "Iria", "text": "Un día sencillo, pero importante. Gracias por cuidar de Liria.", "conditions": [{"type": "QuestCompleted", "value": "MQ00_01"}], "choices": [{"text": "Cerrar diálogo.", "next": ""}]}
 		}
 	}

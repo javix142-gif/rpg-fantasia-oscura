@@ -3,9 +3,10 @@
 Repositorio base para desarrollar el RPG móvil con Codex Cloud + Godot.
 
 ## Estado
-**P1.1 CLOUD COMPLETADO / QA DE DISPOSITIVO PENDIENTE**
+**P1.3 QUALITY FOUNDATION CLOUD COMPLETADO / QA DE DISPOSITIVO PENDIENTE**
 
-El gate Cloud de Prompt 0, Prompt 1 y su reparación P1.1 están validados.
+El gate Cloud de Prompt 0, Prompt 1 y sus reparaciones P1.1, P1.2 y P1.3 están
+validados.
 Prompt 2 (ataque de Liria + combate ARPG) aún no ha comenzado y permanece
 bloqueado hasta la prueba física y aprobación visual.
 
@@ -29,9 +30,11 @@ save/load y el pipeline visual JIT. La validación reproducible de Stage 1 es:
 ```
 
 P1.1 reparó la orientación Android landscape, safe area, interacción táctil,
-animación real del jugador y la integración visual de Liria/NPC. El APK de
-esta corrección es `builds/android/rpg_stage1_liria_p11.apk` (ignorado por
-Git). `DEVICE_QA=PENDING`, `USER_VISUAL_APPROVAL=PENDING` y
+animación real del jugador y la integración visual de Liria/NPC. P1.2 y P1.3
+reforzaron la coherencia de player/NPC, footprints del mundo, guía de quest,
+HUD/diálogo, portada, profundidad, vida ambiental y transiciones. El APK P1.3
+es `builds/android/rpg_stage1_liria_p13.apk` (ignorado por Git).
+`DEVICE_QA=PENDING`, `USER_VISUAL_APPROVAL=PENDING` y
 `PROMPT_1_REAL=PENDING`.
 
 La preparación se reproduce desde un checkout limpio con:
@@ -48,6 +51,15 @@ Git). Para ejecuciones separadas:
 ./scripts/test_headless.sh
 ./scripts/build_android_debug.sh
 ```
+
+El gate completo de P1.3 se reproduce con:
+
+```bash
+./scripts/test_p13.sh
+```
+
+Las evidencias estáticas de inspección están en `art/debug/` y el APK P1.3
+validado es `builds/android/rpg_stage1_liria_p13.apk`.
 
 El proyecto Godot se encuentra en `game/`. Prompt 0 genera
 `builds/android/rpg_prompt0_smoke.apk`; Prompt 1 genera

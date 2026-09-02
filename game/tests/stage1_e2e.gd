@@ -199,15 +199,16 @@ func _press_dialogue_choice(panel: DialoguePanel, index: int) -> void:
 		return
 	button.emit_signal("pressed")
 	await process_frame
+	await create_timer(0.22).timeout
 
 func _walk_until_target(player: PlayerController, target_position: Vector2, target_id: String) -> void:
 	var waypoints: Array[Vector2] = [target_position]
-	# The fountain is a real solid landmark now.  Use the open south route in
-	# this deterministic test, matching the route a player can take with touch.
+	# The fountain and garden beds are real solid landmarks now. Use the open
+	# north corridor, matching a route a player can take with touch.
 	if target_id == "NPC_HALVEN":
-		waypoints = [Vector2(370, 460), Vector2(630, 460), target_position]
+		waypoints = [Vector2(370, 330), Vector2(365, 270), target_position]
 	elif target_id == "NPC_IRIA" and player.global_position.x > 500.0:
-		waypoints = [Vector2(630, 460), Vector2(370, 460), target_position]
+		waypoints = [Vector2(365, 270), Vector2(370, 330), target_position]
 	for waypoint in waypoints:
 		for _frame in range(160):
 			var distance := player.global_position.distance_to(target_position)

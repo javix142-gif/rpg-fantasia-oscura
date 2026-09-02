@@ -61,7 +61,7 @@ func _process_assets() -> bool:
 		return false
 	master.convert(Image.FORMAT_RGBA8)
 	liria.convert(Image.FORMAT_RGBA8)
-	if not _write_actor_canvas(master, player_out, Vector2i(64, 64), Vector2i(56, 58)):
+	if not _write_actor_canvas(master, player_out, Vector2i(64, 64), Vector2i(52, 54)):
 		return false
 	if not _write_portrait_canvas(master, portrait_out):
 		return false
@@ -134,7 +134,7 @@ func _write_player_sheet(source: Image, output_path: String) -> bool:
 			var frame: Image = keyed.get_region(source_rect)
 			if flip_h:
 				frame.flip_x()
-			var normalized := _normalize_actor(frame, Vector2i(64, 64), Vector2i(56, 58))
+			var normalized := _normalize_actor(frame, Vector2i(64, 64), Vector2i(52, 54))
 			output.blit_rect(normalized, Rect2i(Vector2i.ZERO, normalized.get_size()), Vector2i(column * 64, row * 64))
 	return output.save_png(output_path) == OK
 
@@ -144,7 +144,7 @@ func _write_npc_sheet(source: Image, output_path: String) -> bool:
 	for column in range(5):
 		var source_rect := _proportional_rect(source, column, 5, 0, 1)
 		var frame := source.get_region(source_rect)
-		var normalized := _normalize_actor(frame, Vector2i(64, 64), Vector2i(56, 58))
+		var normalized := _normalize_actor(frame, Vector2i(64, 64), Vector2i(52, 54))
 		output.blit_rect(normalized, Rect2i(Vector2i.ZERO, normalized.get_size()), Vector2i(column * 64, 0))
 	return output.save_png(output_path) == OK
 
@@ -263,7 +263,20 @@ func _normalize_actor(source: Image, canvas_size: Vector2i, fit_size: Vector2i) 
 	canvas.fill(Color(0, 0, 0, 0))
 	var destination := Vector2i((canvas_size.x - scaled_size.x) / 2, canvas_size.y - scaled_size.y - 4)
 	canvas.blit_rect(cropped, Rect2i(Vector2i.ZERO, scaled_size), destination)
+	_normalize_alpha(canvas)
 	return canvas
+
+func _normalize_alpha(image: Image) -> void:
+	# Keep actor outputs binary and clear RGB left behind in transparent texels.
+	# This avoids interpolation matte/halo bleed on Android without changing the
+	# authored palette or applying a blur.
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			var pixel := image.get_pixel(x, y)
+			if pixel.a < 0.05:
+				image.set_pixel(x, y, Color(0, 0, 0, 0))
+			elif pixel.a > 0.95:
+				image.set_pixel(x, y, Color(pixel.r, pixel.g, pixel.b, 1.0))
 
 func _write_actor_canvas(source: Image, output_path: String, canvas_size: Vector2i, fit_size: Vector2i) -> bool:
 	return _normalize_actor(source, canvas_size, fit_size).save_png(output_path) == OK

@@ -62,7 +62,7 @@ func _test_catalog(catalog: Array[Dictionary]) -> void:
 	var ids: Dictionary = {}
 	for spec in catalog:
 		ids[String(spec.get("id", ""))] = true
-		_check(String(spec.get("category", "")) in ["boundary", "house", "smithy", "market", "fountain", "fence", "tree", "prop"], "collision category is explicit")
+		_check(String(spec.get("category", "")) in ["boundary", "house", "smithy", "market", "fountain", "fence", "tree", "garden", "prop"], "collision category is explicit")
 	for collision_id in REQUIRED_COLLISIONS:
 		_check(ids.has(collision_id), "collision catalog contains " + collision_id)
 	_check(catalog.size() >= 25, "map has perimeter plus maintained footprints")

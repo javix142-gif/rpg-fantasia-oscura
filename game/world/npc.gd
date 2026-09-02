@@ -19,7 +19,15 @@ var body_color: Color = Color("#537b69")
 var accent_color: Color = Color("#e5b45a")
 var accessory: String = ""
 var interaction_target: InteractionTarget
+var quest_marker: QuestMarker
 var _sprite: Sprite2D
+var _ambient_home_position := Vector2.ZERO
+var _ambient_clock := 0.0
+var _ambient_timer := 1.2
+var _ambient_cycle := 0
+var _ambient_state := "IDLE"
+var _ambient_phase := 0.0
+var _ambient_tween: Tween
 
 func setup(new_id: String, new_name: String, new_role: String, spawn_position: Vector2, color: Color, accent: Color, new_accessory: String = "") -> void:
 	actor_id = new_id
@@ -29,12 +37,18 @@ func setup(new_id: String, new_name: String, new_role: String, spawn_position: V
 	accent_color = accent
 	accessory = new_accessory
 	global_position = spawn_position
+	_ambient_home_position = spawn_position
+	for character in actor_id:
+		_ambient_phase += float(character.unicode_at(0))
+	_ambient_phase = fmod(_ambient_phase, 6.0)
 
 func _ready() -> void:
 	z_index = 0
 	_build_shadow()
 	_build_sprite()
 	_build_interaction_target()
+	_build_quest_marker()
+	set_process(true)
 
 func _build_shadow() -> void:
 	var shadow := Polygon2D.new()
@@ -56,6 +70,12 @@ func _build_sprite() -> void:
 	frame.region = Rect2(_sprite_index() * 64, 0, 64, 64)
 	_sprite.texture = frame
 	add_child(_sprite)
+
+func _build_quest_marker() -> void:
+	quest_marker = QuestMarker.new()
+	quest_marker.name = "QuestMarker"
+	quest_marker.position = Vector2(0, -68)
+	add_child(quest_marker)
 
 func _sprite_index() -> int:
 	if ROLE_SPRITES.has(role):
@@ -86,6 +106,43 @@ func _build_interaction_target() -> void:
 
 func _on_activated(target_id: String) -> void:
 	interacted.emit(target_id)
+
+func set_quest_marker(kind: String) -> void:
+	if quest_marker != null:
+		quest_marker.set_marker(kind)
+
+func ambient_state() -> String:
+	return _ambient_state
+
+func _process(delta: float) -> void:
+	_ambient_clock += delta
+	if _sprite != null:
+		var bob := sin(_ambient_clock * 2.1 + _ambient_phase) * 0.65
+		_sprite.position = Vector2(0, -30.0 + bob)
+	if role != "villager":
+		return
+	_ambient_timer -= delta
+	if _ambient_timer <= 0.0 and (_ambient_tween == null or not _ambient_tween.is_valid()):
+		_start_ambient_cycle()
+
+func _start_ambient_cycle() -> void:
+	_ambient_cycle = (_ambient_cycle + 1) % 3
+	match _ambient_cycle:
+		0:
+			_ambient_state = "IDLE"
+			_ambient_timer = 1.6 + fmod(_ambient_phase, 1.2)
+		1:
+			_ambient_state = "LOOK"
+			_ambient_timer = 1.0 + fmod(_ambient_phase, 0.9)
+		2:
+			_ambient_state = "SHORT_WALK"
+			_ambient_timer = 2.8 + fmod(_ambient_phase, 1.1)
+			var offset := Vector2(sin(_ambient_phase + _ambient_clock) * 16.0, cos(_ambient_phase + _ambient_clock) * 7.0)
+			_ambient_tween = create_tween()
+			_ambient_tween.tween_property(self, "position", _ambient_home_position + offset, 0.42)
+			_ambient_tween.tween_interval(0.5)
+			_ambient_tween.tween_property(self, "position", _ambient_home_position, 0.42)
+			_ambient_tween.tween_callback(func() -> void: _ambient_tween = null)
 
 func prompt_text() -> String:
 	return "Hablar con " + display_name

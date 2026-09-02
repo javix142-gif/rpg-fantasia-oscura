@@ -93,13 +93,14 @@ func _press_choice(panel: DialoguePanel, index: int) -> void:
 		return
 	button.emit_signal("pressed")
 	await process_frame
+	await create_timer(0.22).timeout
 
 func _walk_until_target(player: PlayerController, target_position: Vector2, target_id: String) -> void:
 	var waypoints: Array[Vector2] = [target_position]
 	if target_id == "NPC_HALVEN":
-		waypoints = [Vector2(370, 460), Vector2(630, 460), target_position]
+		waypoints = [Vector2(370, 330), Vector2(365, 270), target_position]
 	elif target_id == "NPC_IRIA" and player.global_position.x > 500.0:
-		waypoints = [Vector2(630, 460), Vector2(370, 460), target_position]
+		waypoints = [Vector2(365, 270), Vector2(370, 330), target_position]
 	for waypoint in waypoints:
 		for _frame in range(180):
 			if player.current_interaction_target != null and player.current_interaction_target.target_id == target_id and player.global_position.distance_to(target_position) < 76.0:

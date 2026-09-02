@@ -1,14 +1,15 @@
 # SESSION_SUMMARY.md
 
 ## Estado
-P1.2 Cloud cerrado internamente: se repararon dirección/atlas/alpha del
-jugador, footprints físicos de Liria, layout móvil de diálogo/HUD, reentrada y
-cierre de MQ00_01, y presentación responsive del título. El gate reproducible y
+P1.3 Quality Foundation cerrado internamente en Cloud: se homogeneizaron
+player/NPC/UI, se reforzaron footprints y rutas físicas de Liria, se añadió
+profundidad selectiva y vida ambiental, se incorporó guía explícita de
+MQ00_01, feedback/transiciones y una portada integrada. El gate reproducible y
 el APK Android debug quedan validados por script; la aceptación física y
 visual del usuario siguen pendientes.
 
 ## Próximo paso
-Probar el APK P1.2 en un dispositivo Android y registrar la aprobación visual.
+Probar el APK P1.3 en un dispositivo Android y registrar la aprobación visual.
 Mantener `P1_DEVICE=PENDING`, `P1_REAL=PENDING` y no iniciar Prompt 2
 automáticamente.
 
@@ -77,3 +78,28 @@ El ataque, ARPG, Radan, Ceniza y Cyrion siguen fuera de alcance.
 - APK P1.2: `builds/android/rpg_stage1_liria_p12.apk`, 59,923,210 bytes,
   `targetSdkVersion=36`, `screenOrientation=0`, ZIP íntegro.
 - Estado: `P1_DEVICE=PENDING`, `P1_REAL=PENDING`, `P2_AUTORIZADO=NO`.
+
+## Validación P1.3
+- Base de trabajo: commit remoto `f91ea49ee5fee6781ed83d6e67369b558bffa0f2`.
+- Player: 8 direcciones explícitas, idle/walk con canvas y pivote estables,
+  sin flip runtime; `PLAYER_ALPHA_ARTIFACT_PIXELS=0`.
+- Mundo: 35 footprints nombrados, capas físicas/visuales explícitas y 6 rutas
+  críticas libres; fuente, edificios, cercas, árboles, huertas y props
+  principales cubiertos por contrato.
+- Vida: aldeano con ciclo idle/look/short walk y FX deterministas de fuente,
+  herrería, humo, mercado y luciérnagas.
+- Quest: tracker accionable, marcador `!/?`, guía offscreen, toast de objetivo
+  y cierre completo de MQ00_01 con eliminación de la linterna.
+- UI: tema compartido, diálogo con retrato y choices compactas, HUD/portada y
+  transiciones verificadas en 640×360 y 800×360.
+- GDA, headless, regresión P1/P1.1/P1.2, contratos P1.3, evidencia estática y
+  export Android: PASS mediante `./scripts/test_p13.sh`.
+- Evidencias: `art/debug/p13_player_contact_sheet.png`,
+  `art/debug/p13_collision_map.png`, `art/debug/p13_player_contact_sheet.svg`
+  y `art/debug/p13_ui_mockups.svg`.
+- APK P1.3: `builds/android/rpg_stage1_liria_p13.apk`, 59,958,175 bytes,
+  `targetSdkVersion=36`, `screenOrientation=0`.
+- Image Generation P1.3: 0 llamadas; las evidencias se generaron de forma
+  determinista a partir de assets existentes.
+- Estado: `P1_DEVICE=PENDING`, `USER_VISUAL_APPROVAL=PENDING`,
+  `P1_REAL=PENDING`, `P2_AUTORIZADO=NO`.

@@ -71,6 +71,7 @@ func _press_choice(panel: DialoguePanel, index: int) -> void:
 		return
 	button.emit_signal("pressed")
 	await process_frame
+	await create_timer(0.22).timeout
 
 func _check(condition: bool, message: String) -> void:
 	if not condition:
