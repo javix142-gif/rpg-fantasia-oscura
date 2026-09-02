@@ -11,6 +11,8 @@ signal menu_pressed
 
 var root_control: Control
 var status_panel: PanelContainer
+var quest_panel: PanelContainer
+var actions: HBoxContainer
 var name_label: Label
 var class_label: Label
 var hp_bar: ProgressBar
@@ -25,6 +27,7 @@ var joystick: Stage1VirtualJoystick
 var interact_button: Button
 var menu_panel: PanelContainer
 var player: PlayerController
+var dialogue_mode := false
 
 func _state_node() -> Node:
 	return get_node_or_null("/root/GameState")
@@ -56,6 +59,10 @@ func _panel(color: Color, border: Color = Color("#8b6a46")) -> PanelContainer:
 	style.corner_radius_top_right = 7
 	style.corner_radius_bottom_left = 7
 	style.corner_radius_bottom_right = 7
+	style.content_margin_left = 8
+	style.content_margin_right = 8
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
 	panel.add_theme_stylebox_override("panel", style)
 	return panel
 
@@ -64,6 +71,36 @@ func _label(text: String, size: int, color: Color) -> Label:
 	result.text = text
 	result.add_theme_font_size_override("font_size", size)
 	result.add_theme_color_override("font_color", color)
+	return result
+
+func _button(text: String, minimum_size: Vector2, emphasized: bool = false) -> Button:
+	var result := Button.new()
+	result.text = text
+	result.custom_minimum_size = minimum_size
+	result.focus_mode = Control.FOCUS_NONE
+	result.add_theme_font_size_override("font_size", 11 if not emphasized else 12)
+	result.add_theme_color_override("font_color", Color("#fff1cb"))
+	result.add_theme_color_override("font_hover_color", Color("#fff8e8"))
+	result.add_theme_color_override("font_pressed_color", Color("#fff8e8"))
+	result.add_theme_color_override("font_disabled_color", Color(0.7, 0.7, 0.7, 0.55))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color("#293344") if not emphasized else Color("#6f5232")
+	normal.border_color = Color("#607086") if not emphasized else Color("#d3ab61")
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(6)
+	normal.content_margin_left = 8
+	normal.content_margin_right = 8
+	var hover := normal.duplicate()
+	hover.bg_color = Color("#3b4c5e") if not emphasized else Color("#906b3b")
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color("#1f2734") if not emphasized else Color("#513b25")
+	var disabled := normal.duplicate()
+	disabled.bg_color = Color(0.15, 0.17, 0.21, 0.6)
+	disabled.border_color = Color(0.36, 0.38, 0.42, 0.45)
+	result.add_theme_stylebox_override("normal", normal)
+	result.add_theme_stylebox_override("hover", hover)
+	result.add_theme_stylebox_override("pressed", pressed)
+	result.add_theme_stylebox_override("disabled", disabled)
 	return result
 
 func _anchor(control: Control, left: float, top: float, right: float, bottom: float, offsets: Array[float]) -> void:
@@ -78,7 +115,7 @@ func _anchor(control: Control, left: float, top: float, right: float, bottom: fl
 
 func _build_status() -> void:
 	status_panel = _panel(Color(0.06, 0.07, 0.1, 0.90))
-	_anchor(status_panel, 0.0, 0.0, 0.0, 0.0, [8.0, 8.0, 198.0, 72.0])
+	_anchor(status_panel, 0.0, 0.0, 0.0, 0.0, [8.0, 8.0, 206.0, 80.0])
 	root_control.add_child(status_panel)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 7)
@@ -125,12 +162,13 @@ func _bar(color: Color, max_value: float, width: float) -> ProgressBar:
 	return bar
 
 func _build_quest() -> void:
-	var panel := _panel(Color(0.07, 0.08, 0.12, 0.86))
-	_anchor(panel, 0.5, 0.0, 0.5, 0.0, [-122.0, 8.0, 122.0, 60.0])
-	root_control.add_child(panel)
+	quest_panel = _panel(Color(0.07, 0.08, 0.12, 0.88), Color("#9f7b4b"))
+	_anchor(quest_panel, 0.5, 0.0, 0.5, 0.0, [-128.0, 8.0, 128.0, 66.0])
+	root_control.add_child(quest_panel)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 1)
-	panel.add_child(column)
+	quest_panel.add_child(column)
+	column.add_child(_label("OBJETIVO", 8, Color("#9bb39b")))
 	quest_title = _label("Un día cualquiera", 12, Color("#f0bf5a"))
 	column.add_child(quest_title)
 	quest_objective = _label("Habla con Iria en la plaza.", 10, Color("#f5ecd0"))
@@ -138,21 +176,15 @@ func _build_quest() -> void:
 	column.add_child(quest_objective)
 
 func _build_actions() -> void:
-	var actions := HBoxContainer.new()
+	actions = HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 5)
 	_anchor(actions, 1.0, 0.0, 1.0, 0.0, [-178.0, 8.0, -8.0, 42.0])
 	root_control.add_child(actions)
-	var inventory := Button.new()
-	inventory.text = "Bolsa"
-	inventory.custom_minimum_size = Vector2(76, 34)
-	inventory.focus_mode = Control.FOCUS_NONE
+	var inventory := _button("Bolsa", Vector2(76, 34))
 	inventory.pressed.connect(func() -> void: inventory_pressed.emit())
 	actions.add_child(inventory)
-	var menu := Button.new()
-	menu.text = "☰"
+	var menu := _button("☰", Vector2(42, 34), true)
 	menu.tooltip_text = "Menú"
-	menu.custom_minimum_size = Vector2(38, 34)
-	menu.focus_mode = Control.FOCUS_NONE
 	menu.pressed.connect(func() -> void: menu_pressed.emit())
 	actions.add_child(menu)
 	menu_panel = _panel(Color(0.06, 0.07, 0.1, 0.96), Color("#c29b5b"))
@@ -162,41 +194,33 @@ func _build_actions() -> void:
 	menu_column.add_theme_constant_override("separation", 4)
 	menu_panel.add_child(menu_column)
 	menu_column.add_child(_label("Menú", 13, Color("#f0bf5a")))
-	var save := Button.new()
-	save.text = "Guardar partida"
-	save.focus_mode = Control.FOCUS_NONE
+	var save := _button("Guardar partida", Vector2(0, 30))
 	save.pressed.connect(func() -> void:
 		menu_panel.visible = false
 		save_pressed.emit())
 	menu_column.add_child(save)
-	var load := Button.new()
-	load.text = "Cargar partida"
-	load.focus_mode = Control.FOCUS_NONE
+	var load := _button("Cargar partida", Vector2(0, 30))
 	load.pressed.connect(func() -> void:
 		menu_panel.visible = false
 		load_pressed.emit())
 	menu_column.add_child(load)
-	var close := Button.new()
-	close.text = "Cerrar"
-	close.focus_mode = Control.FOCUS_NONE
+	var close := _button("Cerrar", Vector2(0, 30))
 	close.pressed.connect(func() -> void: menu_panel.visible = false)
 	menu_column.add_child(close)
 	menu_panel.visible = false
 	joystick = Stage1VirtualJoystick.new()
 	joystick.name = "VirtualJoystick"
-	_anchor(joystick, 0.0, 1.0, 0.0, 1.0, [10.0, -100.0, 100.0, -10.0])
+	_anchor(joystick, 0.0, 1.0, 0.0, 1.0, [10.0, -112.0, 122.0, -8.0])
 	root_control.add_child(joystick)
-	interact_button = Button.new()
+	interact_button = _button("Hablar", Vector2(112, 50), true)
 	interact_button.name = "InteractionButton"
-	interact_button.text = "Hablar"
-	interact_button.custom_minimum_size = Vector2(106, 52)
-	interact_button.focus_mode = Control.FOCUS_NONE
-	_anchor(interact_button, 1.0, 1.0, 1.0, 1.0, [-114.0, -62.0, -8.0, -8.0])
+	_anchor(interact_button, 1.0, 1.0, 1.0, 1.0, [-122.0, -60.0, -10.0, -10.0])
 	interact_button.pressed.connect(func() -> void: interact_pressed.emit())
 	root_control.add_child(interact_button)
 	prompt_label = _label("", 10, Color("#ffe9a8"))
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_anchor(prompt_label, 0.45, 1.0, 1.0, 1.0, [-8.0, -92.0, -8.0, -66.0])
+	prompt_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_anchor(prompt_label, 0.40, 1.0, 1.0, 1.0, [0.0, -90.0, -12.0, -66.0])
 	root_control.add_child(prompt_label)
 	toast_label = _label("", 11, Color("#ffe9a8"))
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -214,9 +238,7 @@ func _build_inventory() -> void:
 	inventory_text = _label("", 11, Color("#f7eed5"))
 	inventory_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(inventory_text)
-	var close := Button.new()
-	close.text = "Cerrar"
-	close.focus_mode = Control.FOCUS_NONE
+	var close := _button("Cerrar", Vector2(0, 30))
 	close.pressed.connect(func() -> void: inventory_panel.visible = false)
 	column.add_child(close)
 	inventory_panel.visible = false
@@ -235,10 +257,32 @@ func set_interaction_prompt(text: String) -> void:
 	prompt_label.text = text
 	interact_button.disabled = text.is_empty()
 
+func set_dialogue_mode(active: bool) -> void:
+	dialogue_mode = active
+	if quest_panel != null:
+		quest_panel.visible = not active
+	if actions != null:
+		actions.visible = not active
+	if joystick != null:
+		joystick.visible = not active
+	if interact_button != null:
+		interact_button.visible = not active
+	if prompt_label != null:
+		prompt_label.visible = not active
+	if active:
+		if menu_panel != null:
+			menu_panel.visible = false
+		if inventory_panel != null:
+			inventory_panel.visible = false
+
 func toggle_menu() -> void:
+	if dialogue_mode:
+		return
 	menu_panel.visible = not menu_panel.visible
 
 func toggle_inventory() -> void:
+	if dialogue_mode:
+		return
 	inventory_panel.visible = not inventory_panel.visible
 	_refresh_inventory()
 

@@ -158,7 +158,7 @@
 			"id": "ASSET_P11_PLAYER_SHEET",
 			"mirror_source": null,
 			"output_path": "game/assets/p1_1/player_sheet.png",
-			"output_sha256": "06d29375cd266c1d001c607f662135fd0ec0e90c742ced2ab6a087c9a67fd88f",
+			"output_sha256": "e70bd3a575b997909e38403486034b95df7363f25463f58029b9dc9d7d594988",
 			"pivot": [
 				32.0,
 				60.0
@@ -272,7 +272,7 @@
 			"id": "ASSET_PLAYER_IDLE",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -376,7 +376,7 @@
 			"id": "ASSET_PLAYER_NW_MIRROR",
 			"mirror_source": "ASSET_PLAYER_NE",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -480,7 +480,7 @@
 			"id": "ASSET_PLAYER_SWORD",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -513,7 +513,7 @@
 			"id": "ASSET_PLAYER_SW_MIRROR",
 			"mirror_source": "ASSET_PLAYER_SE",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -554,7 +554,7 @@
 			"id": "ASSET_PLAYER_WALK",
 			"mirror_source": null,
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -588,7 +588,7 @@
 			"id": "ASSET_PLAYER_W_MIRROR",
 			"mirror_source": "ASSET_PLAYER_E",
 			"output_path": "game/world/player_controller.gd",
-			"output_sha256": "bb78a1bcfa42976cc8a982626c86ac48ba08afa912dd93591b27d200efbf8e10",
+			"output_sha256": "801a56e7361202fd99e681a23e3f987aa6d93d7441ca1a03b6ce94feaa7897a5",
 			"pivot": [
 				32.0,
 				56.0
@@ -908,7 +908,7 @@
 			"id": "ENV_BUSH_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				32.0,
 				56.0
@@ -939,7 +939,7 @@
 			"id": "ENV_HOUSE_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -971,7 +971,7 @@
 			"id": "ENV_HOUSE_B",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1002,7 +1002,7 @@
 			"id": "ENV_LIRIA_PROCEDURAL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1034,7 +1034,7 @@
 			"id": "ENV_MARKET_STALL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1066,7 +1066,7 @@
 			"id": "ENV_SMITHY",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1098,7 +1098,7 @@
 			"id": "ENV_TREE_OAK_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				64.0,
 				118.0
@@ -1163,7 +1163,7 @@
 			"id": "ITEM_LANTERN",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
+			"output_sha256": "430bde0e57cf03a0ad54d393a337d47ed8f78fe773ee5634fff8e2b5a05ca509",
 			"pivot": [
 				12.0,
 				20.0
@@ -1229,7 +1229,7 @@
 			"id": "PROP_BARREL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				16.0,
 				28.0
@@ -1260,7 +1260,7 @@
 			"id": "PROP_BENCH",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				32.0,
 				28.0
@@ -1291,7 +1291,7 @@
 			"id": "PROP_FOUNTAIN",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				48.0,
 				56.0
@@ -1322,7 +1322,7 @@
 			"id": "PROP_LAMP",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				16.0,
 				56.0
@@ -1353,7 +1353,7 @@
 			"id": "PROP_SMITH_ANVIL",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				32.0,
 				28.0
@@ -1416,7 +1416,7 @@
 			"id": "TILE_DIRT_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1448,7 +1448,7 @@
 			"id": "TILE_GRASS_A",
 			"mirror_source": null,
 			"output_path": "game/world/village_world.gd",
-			"output_sha256": "3fa04a3d9a58e27461d5cadbe85bff643b466cc981c8c170154d0c35ea551092",
+			"output_sha256": "2882f120cde3d27eba2efb509aa3baa9b9ea1c4405eccb9521c04e33ccf5c30b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1480,7 +1480,7 @@
 			"id": "UI_CLASS_ICONS",
 			"mirror_source": null,
 			"output_path": "game/main.gd",
-			"output_sha256": "9b96240ca5c665eaea5d02f24ebe17ab65b89a44ff8b74522e2bc644b4745612",
+			"output_sha256": "4ad571f790853fbaa414a6d3c0dded3849d816cea83f57b4d80b5361cf43d20f",
 			"pivot": [
 				12.0,
 				12.0
@@ -1512,7 +1512,7 @@
 			"id": "UI_DIALOGUE_PANEL",
 			"mirror_source": null,
 			"output_path": "game/ui/dialogue_panel.gd",
-			"output_sha256": "da82a61afa0c19952570345935a2a262b509049ac6248802e4f434f4bc152be9",
+			"output_sha256": "4d28de89444a8bba0c53aa81e19a5a66a74f5c6deebb28687c6f9a496096b97b",
 			"pivot": [
 				0.0,
 				0.0
@@ -1544,7 +1544,7 @@
 			"id": "UI_INTERACTION_BUTTON",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
+			"output_sha256": "430bde0e57cf03a0ad54d393a337d47ed8f78fe773ee5634fff8e2b5a05ca509",
 			"pivot": [
 				48.0,
 				21.0
@@ -1608,7 +1608,7 @@
 			"id": "UI_P1_HUD",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
+			"output_sha256": "430bde0e57cf03a0ad54d393a337d47ed8f78fe773ee5634fff8e2b5a05ca509",
 			"pivot": [
 				0.0,
 				0.0
@@ -1640,7 +1640,7 @@
 			"id": "UI_STATUS_PANEL",
 			"mirror_source": null,
 			"output_path": "game/ui/hud.gd",
-			"output_sha256": "7c8b08126cd98f4346c1f3cd665263c9bcd1f24a82dc6ecb079189daf223c11b",
+			"output_sha256": "430bde0e57cf03a0ad54d393a337d47ed8f78fe773ee5634fff8e2b5a05ca509",
 			"pivot": [
 				0.0,
 				0.0

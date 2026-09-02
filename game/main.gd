@@ -49,6 +49,42 @@ func _clear_view() -> void:
 	for child in get_children():
 		child.queue_free()
 
+func _layout_size() -> Vector2:
+	var result := size
+	if result.x <= 0.0 or result.y <= 0.0:
+		result = get_viewport_rect().size
+	return result
+
+func _menu_button(text: String, minimum_size: Vector2, emphasized: bool = false) -> Button:
+	var result := Button.new()
+	result.text = text
+	result.custom_minimum_size = minimum_size
+	result.focus_mode = Control.FOCUS_NONE
+	result.add_theme_font_size_override("font_size", 12)
+	result.add_theme_color_override("font_color", Color("#fff1cb"))
+	result.add_theme_color_override("font_hover_color", Color("#fff8e8"))
+	result.add_theme_color_override("font_pressed_color", Color("#fff8e8"))
+	result.add_theme_color_override("font_disabled_color", Color(0.7, 0.7, 0.7, 0.55))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color("#2a3543") if not emphasized else Color("#76552f")
+	normal.border_color = Color("#64788a") if not emphasized else Color("#d5ae67")
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(6)
+	normal.content_margin_left = 9
+	normal.content_margin_right = 9
+	var hover := normal.duplicate()
+	hover.bg_color = Color("#3c4c5d") if not emphasized else Color("#98713f")
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color("#1e2733") if not emphasized else Color("#513a23")
+	var disabled := normal.duplicate()
+	disabled.bg_color = Color(0.15, 0.17, 0.21, 0.6)
+	disabled.border_color = Color(0.36, 0.38, 0.42, 0.45)
+	result.add_theme_stylebox_override("normal", normal)
+	result.add_theme_stylebox_override("hover", hover)
+	result.add_theme_stylebox_override("pressed", pressed)
+	result.add_theme_stylebox_override("disabled", disabled)
+	return result
+
 func _show_menu() -> void:
 	mode = "menu"
 	world = null
@@ -57,36 +93,42 @@ func _show_menu() -> void:
 	dialogue = null
 	_clear_view()
 	queue_redraw()
+	var canvas_size := _layout_size()
 	var title := Label.new()
 	title.text = "RPG FANTASÍA OSCURA"
-	title.position = Vector2(0, 42)
-	title.size = Vector2(640, 42)
+	title.position = Vector2(0, 32)
+	title.size = Vector2(canvas_size.x, 38)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color("#f0c56d"))
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(title)
 	var subtitle := Label.new()
 	subtitle.text = "Un prólogo tranquilo en Liria"
-	subtitle.position = Vector2(0, 85)
-	subtitle.size = Vector2(640, 24)
+	subtitle.position = Vector2(0, 68)
+	subtitle.size = Vector2(canvas_size.x, 24)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", Color("#b6c6b4"))
+	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(subtitle)
-	var panel := _menu_panel(Vector2(170, 118), Vector2(264, 200))
+	var panel_position := Vector2(canvas_size.x * 0.22, canvas_size.y * 0.34)
+	var panel_size := Vector2(270, 210)
+	var panel := _menu_panel(panel_position, panel_size)
 	add_child(panel)
 	var visual_preview := TextureRect.new()
 	visual_preview.texture = load("res://assets/p1_1/liria_scene.png") as Texture2D
-	visual_preview.position = Vector2(454, 122)
+	visual_preview.position = Vector2(canvas_size.x - 186.0, panel_position.y + 4.0)
 	visual_preview.size = Vector2(172, 114)
 	visual_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	visual_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	visual_preview.modulate = Color(1.0, 1.0, 1.0, 0.86)
 	visual_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	visual_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(visual_preview)
 	var column := VBoxContainer.new()
-	column.position = Vector2(190, 132)
-	column.size = Vector2(224, 170)
+	column.position = panel_position + Vector2(18, 12)
+	column.size = panel_size - Vector2(36, 24)
 	column.add_theme_constant_override("separation", 8)
 	add_child(column)
 	var prompt := Label.new()
@@ -95,20 +137,14 @@ func _show_menu() -> void:
 	prompt.add_theme_font_size_override("font_size", 14)
 	prompt.add_theme_color_override("font_color", Color("#fff1cb"))
 	column.add_child(prompt)
-	var new_game := Button.new()
-	new_game.text = "Nueva partida"
-	new_game.custom_minimum_size = Vector2(0, 34)
+	var new_game := _menu_button("Nueva partida", Vector2(0, 34), true)
 	new_game.pressed.connect(_show_creation)
 	column.add_child(new_game)
-	var continue_button := Button.new()
-	continue_button.text = "Continuar"
-	continue_button.custom_minimum_size = Vector2(0, 30)
+	var continue_button := _menu_button("Continuar", Vector2(0, 30))
 	continue_button.disabled = not bool(_save_service().call("has_valid_save", "autosave"))
 	continue_button.pressed.connect(_continue_game)
 	column.add_child(continue_button)
-	var load_button := Button.new()
-	load_button.text = "Cargar partida"
-	load_button.custom_minimum_size = Vector2(0, 30)
+	var load_button := _menu_button("Cargar partida", Vector2(0, 30))
 	load_button.disabled = not bool(_save_service().call("has_valid_save", "slot_01"))
 	load_button.pressed.connect(_load_game)
 	column.add_child(load_button)
@@ -122,19 +158,22 @@ func _show_menu() -> void:
 func _show_creation() -> void:
 	_clear_view()
 	queue_redraw()
+	var canvas_size := _layout_size()
 	var title := Label.new()
 	title.text = "NUEVA PARTIDA"
-	title.position = Vector2(0, 38)
-	title.size = Vector2(640, 34)
+	title.position = Vector2(0, 28)
+	title.size = Vector2(canvas_size.x, 34)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color("#f0c56d"))
 	add_child(title)
-	var panel := _menu_panel(Vector2(146, 88), Vector2(348, 236))
+	var panel_size := Vector2(minf(360.0, canvas_size.x - 40.0), 240.0)
+	var panel_position := Vector2((canvas_size.x - panel_size.x) * 0.5, 78.0)
+	var panel := _menu_panel(panel_position, panel_size)
 	add_child(panel)
 	var column := VBoxContainer.new()
-	column.position = Vector2(170, 106)
-	column.size = Vector2(300, 200)
+	column.position = panel_position + Vector2(24, 18)
+	column.size = panel_size - Vector2(48, 30)
 	column.add_theme_constant_override("separation", 7)
 	add_child(column)
 	var name_label := Label.new()
@@ -156,13 +195,10 @@ func _show_creation() -> void:
 		class_picker.add_item(String(P1_CLASS_NAMES[class_id]))
 		class_picker.set_item_metadata(class_picker.item_count - 1, class_id)
 	column.add_child(class_picker)
-	var start := Button.new()
-	start.text = "Entrar en Liria"
-	start.custom_minimum_size = Vector2(0, 34)
+	var start := _menu_button("Entrar en Liria", Vector2(0, 34), true)
 	start.pressed.connect(_create_profile)
 	column.add_child(start)
-	var back := Button.new()
-	back.text = "Volver"
+	var back := _menu_button("Volver", Vector2(0, 30))
 	back.pressed.connect(_show_menu)
 	column.add_child(back)
 
@@ -208,19 +244,21 @@ func _show_world() -> void:
 	hud.load_pressed.connect(_load_game)
 	hud.menu_pressed.connect(hud.toggle_menu)
 	dialogue = DialoguePanel.new()
-	dialogue.anchor_left = 0.14
+	dialogue.anchor_left = 0.12
 	dialogue.anchor_top = 1.0
-	dialogue.anchor_right = 0.86
+	dialogue.anchor_right = 0.88
 	dialogue.anchor_bottom = 1.0
 	dialogue.offset_left = 0.0
-	dialogue.offset_top = -116.0
+	dialogue.offset_top = -144.0
 	dialogue.offset_right = 0.0
 	dialogue.offset_bottom = -8.0
 	dialogue.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	dialogue.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	dialogue.z_index = 50
-	add_child(dialogue)
+	dialogue.z_index = 100
+	var dialogue_parent: Control = hud.root_control if hud != null and hud.root_control != null else self
+	dialogue_parent.add_child(dialogue)
 	dialogue.closed.connect(_dialogue_closed)
+	hud.set_dialogue_mode(false)
 	hud.refresh_quest()
 	_on_interaction_target_changed(player.current_interaction_target)
 
@@ -242,14 +280,17 @@ func _interact() -> void:
 func _on_interaction_requested(target: InteractionTarget) -> void:
 	if target == null or dialogue == null or dialogue.visible:
 		return
-	if player != null:
-		player.set_physics_process(false)
-	dialogue.open_actor(target.target_id)
+	if dialogue.open_actor(target.target_id):
+		if player != null:
+			player.set_physics_process(false)
+		if hud != null:
+			hud.set_dialogue_mode(true)
 
 func _dialogue_closed() -> void:
 	if player != null:
 		player.set_physics_process(true)
 	if hud != null:
+		hud.set_dialogue_mode(false)
 		hud.refresh_quest()
 
 func _save_game() -> void:
@@ -272,13 +313,18 @@ func _menu_panel(panel_position: Vector2, panel_size: Vector2) -> PanelContainer
 	style.corner_radius_top_right = 10
 	style.corner_radius_bottom_left = 10
 	style.corner_radius_bottom_right = 10
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
 	panel.add_theme_stylebox_override("panel", style)
 	return panel
 
 func _draw() -> void:
 	if mode == "menu":
-		draw_rect(Rect2(Vector2.ZERO, Vector2(640, 360)), Color("#182a2a"), true)
-		draw_circle(Vector2(100, 80), 130, Color(0.22, 0.42, 0.28, 0.42))
-		draw_circle(Vector2(555, 300), 190, Color(0.35, 0.21, 0.19, 0.38))
-		for x in range(0, 640, 32):
-			draw_line(Vector2(x, 342), Vector2(x + 18, 320), Color(0.67, 0.53, 0.34, 0.22), 2)
+		var canvas_size := _layout_size()
+		draw_rect(Rect2(Vector2.ZERO, canvas_size), Color("#182a2a"), true)
+		draw_circle(Vector2(canvas_size.x * 0.14, canvas_size.y * 0.22), canvas_size.y * 0.36, Color(0.22, 0.42, 0.28, 0.42))
+		draw_circle(Vector2(canvas_size.x * 0.88, canvas_size.y * 0.86), canvas_size.y * 0.52, Color(0.35, 0.21, 0.19, 0.38))
+		for x in range(0, int(canvas_size.x), 32):
+			draw_line(Vector2(x, canvas_size.y - 18), Vector2(x + 18, canvas_size.y - 40), Color(0.67, 0.53, 0.34, 0.22), 2)

@@ -7,12 +7,13 @@ Vertical slice:
 **Liria → ataque → consecuencias → Camino Prohibido → Ceniza → primera ruina de Cyrion.**
 
 ## Estado actual
-**PROMPT 0 COMPLETADO — PROMPT 1 COMPLETADO — P1.1 CLOUD COMPLETADO**
+**PROMPT 0 COMPLETADO — PROMPT 1 COMPLETADO — P1.1 CLOUD COMPLETADO — P1.2 REPARACIÓN CLOUD COMPLETADA**
 
 Canon, sistemas 1–14, dirección visual y plan de vertical slice están
-definidos. La primera versión jugable de Liria normal está implementada y la
-reparación P1.1 corrige el gate cloud de dispositivo/visual sin iniciar el
-ataque ni ningún sistema de P2.
+definidos. La primera versión jugable de Liria normal está implementada. La
+reparación P1.1 corrigió el gate cloud inicial y P1.2 añade reparaciones
+acotadas de dispositivo, visual, física, UI y progresión sin iniciar el ataque
+ni ningún sistema de P2.
 
 Validado en Cloud:
 - Godot 4.7.2 Standard y export templates 4.7.2;
@@ -35,9 +36,22 @@ Validado en Cloud:
   comprobado en 16:9 y ratio ancho;
 - APK P1.1 `builds/android/rpg_stage1_liria_p11.apk` validado con
   `screenOrientation=0` y `targetSdkVersion=36`.
+- reparación P1.2: atlas del jugador remapeado de forma determinista, alpha e
+  importación pixel-art saneadas, y contrato de 48 frames/direcciones validado;
+- reparación P1.2: catálogo mantenible de footprints físicos para perímetro,
+  casas, herrería, fuente, cercas, árboles y props principales;
+- reparación P1.2: diálogo/HUD móvil dentro del contenido seguro, controles
+  ocultos durante diálogo, reentrada de Iria y cierre verificable de MQ00_01;
+- reparación P1.2: pantalla inicial responsive y pulido menor de jerarquía,
+  márgenes, botones y paneles;
+- contratos P1.2, E2E Stage 1, layouts 16:9/20:9, headless y export Android
+  preparados para la validación integral reproducible.
+- APK P1.2 `builds/android/rpg_stage1_liria_p12.apk` exportado y verificado:
+  59,923,210 bytes, `targetSdkVersion=36`, `screenOrientation=0`.
 
-Pendientes de validación manual: instalación/sensación en dispositivo
-Android, safe area física, background/resume y aprobación visual del usuario.
+Pendientes de validación manual del APK P1.2: instalación/sensación en
+dispositivo Android, safe area física, background/resume y aprobación visual
+del usuario.
 `DEVICE_QA=PENDING`, `USER_VISUAL_APPROVAL=PENDING` y
 `PROMPT_1_REAL=PENDING`. El personaje y el arte de P1/P1.1 son provisionales;
 no se declaran arte definitivo.
@@ -76,11 +90,11 @@ no se declaran arte definitivo.
 - skills Godot específicas bajo demanda.
 
 ## Próximo gate
-Completar la prueba física y la aprobación visual de P1.1. Sólo después de
+Completar la prueba física y la aprobación visual de P1.2. Sólo después de
 esa aceptación y de una autorización explícita podrá abrirse **P2 — Ataque de
 Liria + combate ARPG**. No comenzar P2 automáticamente.
 
 ## Regla
-P1 cloud y P1.1 cloud están superados; el gate real de dispositivo sigue
+P1 cloud y P1.1/P1.2 cloud están superados; el gate real de dispositivo sigue
 pendiente. El ataque, el combate ARPG y los sistemas posteriores no están
 implementados. `LISTO_PARA_PROMPT_2=NO`.

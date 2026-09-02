@@ -133,7 +133,7 @@ func _test_runtime_movement() -> void:
 	var world = WORLD_SCRIPT.new()
 	host.add_child(world)
 	var player = PLAYER_SCRIPT.new()
-	player.global_position = Vector2(480, 360)
+	player.global_position = Vector2(480, 454)
 	world.add_child(player)
 	await process_frame
 	var before: Vector2 = player.global_position
@@ -201,15 +201,23 @@ func _press_dialogue_choice(panel: DialoguePanel, index: int) -> void:
 	await process_frame
 
 func _walk_until_target(player: PlayerController, target_position: Vector2, target_id: String) -> void:
-	for _frame in range(160):
-		var distance := player.global_position.distance_to(target_position)
-		if distance < 76.0 and player.current_interaction_target != null and player.current_interaction_target.target_id == target_id:
-			player.set_virtual_input(Vector2.ZERO)
+	var waypoints: Array[Vector2] = [target_position]
+	# The fountain is a real solid landmark now.  Use the open south route in
+	# this deterministic test, matching the route a player can take with touch.
+	if target_id == "NPC_HALVEN":
+		waypoints = [Vector2(370, 460), Vector2(630, 460), target_position]
+	elif target_id == "NPC_IRIA" and player.global_position.x > 500.0:
+		waypoints = [Vector2(630, 460), Vector2(370, 460), target_position]
+	for waypoint in waypoints:
+		for _frame in range(160):
+			var distance := player.global_position.distance_to(target_position)
+			if distance < 76.0 and player.current_interaction_target != null and player.current_interaction_target.target_id == target_id:
+				player.set_virtual_input(Vector2.ZERO)
+				await physics_frame
+				return
+			if player.global_position.distance_to(waypoint) <= 6.0:
+				break
+			player.set_virtual_input(player.global_position.direction_to(waypoint))
 			await physics_frame
-			return
-		if distance <= 1.0:
-			break
-		player.set_virtual_input(player.global_position.direction_to(target_position))
-		await physics_frame
 	player.set_virtual_input(Vector2.ZERO)
 	await physics_frame

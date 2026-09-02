@@ -7,7 +7,20 @@ signal interaction_requested(target: InteractionTarget)
 
 const SPEED: float = 124.0
 const DIRECTIONS: Array[String] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+# The atlas is authored with one stable 64x64 row per direction.  Direction
+# changes are driven by the same vector that drives movement; no runtime
+# mirroring is performed, so the sword and feet cannot detach from the body.
 const DIRECTION_ROWS: Dictionary = {"N": 0, "NE": 1, "E": 2, "SE": 3, "S": 4, "SW": 5, "W": 6, "NW": 7}
+const DIRECTION_VECTORS: Dictionary = {
+	"N": Vector2(0, -1),
+	"NE": Vector2(1, -1),
+	"E": Vector2(1, 0),
+	"SE": Vector2(1, 1),
+	"S": Vector2(0, 1),
+	"SW": Vector2(-1, 1),
+	"W": Vector2(-1, 0),
+	"NW": Vector2(-1, -1)
+}
 
 var movement_input: Vector2 = Vector2.ZERO
 var virtual_input: Vector2 = Vector2.ZERO
@@ -60,6 +73,7 @@ func _build_animated_sprite() -> void:
 		for column in [2, 3, 4, 5]:
 			frames.add_frame(walk_name, _atlas_frame(sheet, column, row))
 	_sprite.sprite_frames = frames
+	_sprite.centered = true
 	add_child(_sprite)
 
 func _atlas_frame(sheet: Texture2D, column: int, row: int) -> AtlasTexture:
@@ -120,18 +134,23 @@ func _update_animation(moving: bool) -> void:
 		_sprite.play(animation_name)
 	elif not _sprite.is_playing():
 		_sprite.play()
-	# The generated sheet contains explicit rows for all directions; no runtime
-	# flip is needed, so the sword hand remains stable in every view.
+	# The processed sheet contains explicit rows for all directions; no runtime
+	# flip is needed, so sword, cape and feet retain one stable pivot.
 	_sprite.flip_h = false
 
 func _direction_from_vector(value: Vector2) -> String:
 	if value.length_squared() <= 0.0001:
 		return direction8
-	var angle := value.angle()
-	var index := int(round((angle + PI / 2.0) / (PI / 4.0))) % 8
-	if index < 0:
-		index += 8
-	return DIRECTIONS[index]
+	var normalized := value.normalized()
+	var best_direction := direction8
+	var best_dot := -INF
+	for direction in DIRECTIONS:
+		var axis: Vector2 = DIRECTION_VECTORS[direction]
+		var dot := normalized.dot(axis.normalized())
+		if dot > best_dot:
+			best_dot = dot
+			best_direction = direction
+	return best_direction
 
 func _on_interaction_area_entered(area: Area2D) -> void:
 	var target := area as InteractionTarget

@@ -7,6 +7,8 @@ const WORLD_SIZE := Vector2(960, 640)
 var npcs: Array[VillageNpc] = []
 var tile_layer: TileMapLayer
 var visual_scene: Sprite2D
+var collision_layer: Node2D
+var _collision_catalog: Array[Dictionary] = []
 
 func _ready() -> void:
 	name = "LiriaNormal"
@@ -53,35 +55,97 @@ func _create_render_layers() -> void:
 		layer.name = layer_name
 		layer.y_sort_enabled = layer_name in ["DecorationLayer", "ForegroundLayer"]
 		add_child(layer)
+		if layer_name == "CollisionLayer":
+			collision_layer = layer
 
 func _create_boundaries() -> void:
-	for spec in [Rect2(480, 18, 920, 20), Rect2(480, 622, 920, 20), Rect2(18, 320, 20, 600), Rect2(942, 320, 20, 600)]:
-		_add_blocker(spec)
+	_add_rect_blocker("PERIMETER_NORTH", Vector2(480, -8), Vector2(960, 32), "boundary")
+	_add_rect_blocker("PERIMETER_SOUTH", Vector2(480, 648), Vector2(960, 32), "boundary")
+	_add_rect_blocker("PERIMETER_WEST", Vector2(-8, 320), Vector2(32, 640), "boundary")
+	_add_rect_blocker("PERIMETER_EAST", Vector2(968, 320), Vector2(32, 640), "boundary")
 
 func _create_scene_collisions() -> void:
-	# Only the physical footprint of structures is blocked; canopies, awnings
-	# and foliage remain walkable visual layers.
-	for spec in [
-		Rect2(88, 96, 230, 176),
-		Rect2(406, 76, 226, 150),
-		Rect2(704, 112, 220, 166),
-		Rect2(72, 438, 188, 54),
-		Rect2(760, 438, 156, 54)
-	]:
-		_add_blocker(spec)
+	# The authored scene is a single visual background.  These footprints live
+	# in a separate physical layer and cover only walls, trunks, fence rails and
+	# solid props; roofs, canopies, water and foliage remain visual decoration.
+	# Splitting buildings into wall segments leaves their visible door fronts
+	# readable instead of creating one large invisible rectangle.
+	_add_rect_blocker("HOUSE_MAIN_REAR", Vector2(192, 118), Vector2(226, 54), "house")
+	_add_rect_blocker("HOUSE_MAIN_WEST_WALL", Vector2(110, 198), Vector2(66, 112), "house")
+	_add_rect_blocker("HOUSE_MAIN_EAST_WALL", Vector2(276, 198), Vector2(66, 112), "house")
+	_add_rect_blocker("HOUSE_MAIN_THRESHOLD", Vector2(193, 263), Vector2(88, 16), "house")
 
-func _add_blocker(rect: Rect2) -> void:
+	_add_rect_blocker("SMITHY_REAR", Vector2(510, 100), Vector2(224, 50), "smithy")
+	_add_rect_blocker("SMITHY_WEST_WALL", Vector2(427, 166), Vector2(56, 90), "smithy")
+	_add_rect_blocker("SMITHY_EAST_WALL", Vector2(594, 166), Vector2(56, 90), "smithy")
+	_add_rect_blocker("SMITHY_THRESHOLD", Vector2(510, 219), Vector2(86, 14), "smithy")
+
+	_add_rect_blocker("MARKET_REAR", Vector2(808, 132), Vector2(204, 52), "market")
+	_add_rect_blocker("MARKET_COUNTER", Vector2(808, 218), Vector2(206, 34), "market")
+
+	_add_circle_blocker("FOUNTAIN_BASIN", Vector2(480, 350), 47.0, "fountain")
+
+	_add_rect_blocker("FENCE_WEST_TOP", Vector2(126, 420), Vector2(196, 10), "fence")
+	_add_rect_blocker("FENCE_WEST_LEFT", Vector2(34, 500), Vector2(10, 152), "fence")
+	_add_rect_blocker("FENCE_WEST_RIGHT", Vector2(346, 500), Vector2(10, 152), "fence")
+	_add_rect_blocker("FENCE_WEST_BOTTOM", Vector2(190, 576), Vector2(306, 10), "fence")
+	# Leave a visible west-side gate into the garden so the plaza route does not
+	# become an arbitrary invisible wall around the fountain.
+	_add_rect_blocker("FENCE_EAST_TOP_WEST", Vector2(540, 426), Vector2(100, 10), "fence")
+	_add_rect_blocker("FENCE_EAST_TOP_EAST", Vector2(752, 426), Vector2(176, 10), "fence")
+	_add_rect_blocker("FENCE_EAST_LEFT", Vector2(438, 500), Vector2(10, 142), "fence")
+	_add_rect_blocker("FENCE_EAST_RIGHT", Vector2(850, 500), Vector2(10, 142), "fence")
+	_add_rect_blocker("FENCE_EAST_BOTTOM", Vector2(644, 578), Vector2(402, 10), "fence")
+
+	_add_circle_blocker("TREE_ORCHARD_TRUNK", Vector2(91, 383), 18.0, "tree")
+	_add_circle_blocker("TREE_NORTH_TRUNK", Vector2(566, 82), 18.0, "tree")
+	_add_circle_blocker("TREE_EAST_TRUNK", Vector2(836, 384), 18.0, "tree")
+
+	_add_circle_blocker("PROP_WEST_BARREL", Vector2(337, 244), 12.0, "prop")
+	_add_circle_blocker("PROP_SMITHY_BARREL", Vector2(638, 214), 12.0, "prop")
+	_add_rect_blocker("PROP_SMITHY_ANVIL", Vector2(565, 215), Vector2(42, 20), "prop")
+	_add_rect_blocker("PROP_MARKET_CRATE", Vector2(891, 224), Vector2(24, 20), "prop")
+
+func _add_rect_blocker(collision_id: String, center: Vector2, size: Vector2, category: String) -> void:
+	if collision_layer == null:
+		return
 	var body := StaticBody2D.new()
-	body.name = "WorldCollider"
+	body.name = "Collider_" + collision_id
 	body.collision_layer = 1
 	body.collision_mask = 1
+	body.set_meta("collision_id", collision_id)
+	body.set_meta("collision_category", category)
 	var shape_node := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = rect.size
+	shape.size = size
 	shape_node.shape = shape
-	shape_node.position = rect.position
+	shape_node.name = "Footprint"
+	shape_node.position = center
 	body.add_child(shape_node)
-	add_child(body)
+	collision_layer.add_child(body)
+	_collision_catalog.append({"id": collision_id, "type": "rect", "center": center, "size": size, "category": category})
+
+func _add_circle_blocker(collision_id: String, center: Vector2, radius: float, category: String) -> void:
+	if collision_layer == null:
+		return
+	var body := StaticBody2D.new()
+	body.name = "Collider_" + collision_id
+	body.collision_layer = 1
+	body.collision_mask = 1
+	body.set_meta("collision_id", collision_id)
+	body.set_meta("collision_category", category)
+	var shape_node := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = radius
+	shape_node.shape = shape
+	shape_node.name = "Footprint"
+	shape_node.position = center
+	body.add_child(shape_node)
+	collision_layer.add_child(body)
+	_collision_catalog.append({"id": collision_id, "type": "circle", "center": center, "radius": radius, "category": category})
+
+func collision_catalog() -> Array[Dictionary]:
+	return _collision_catalog.duplicate(true)
 
 func _create_npcs() -> void:
 	_add_npc("NPC_IRIA", "Iria", "iria", Vector2(370, 400), Color("#567f69"), Color("#b9574e"), "arco")

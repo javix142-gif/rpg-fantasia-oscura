@@ -4,6 +4,7 @@ signal state_changed
 
 const SAVE_VERSION: int = 1
 const GAME_VERSION: String = "0.1.0-p1"
+const LIRIA_SPAWN_POSITION := Vector2(480.0, 454.0)
 const CLASS_IDS: Array[String] = ["CLASS_WARRIOR", "CLASS_SWORDSMAN", "CLASS_ARCHER", "CLASS_SORCERER", "CLASS_CLERIC"]
 const CLASS_NAMES: Dictionary = {
 	"CLASS_WARRIOR": "Guerrero",
@@ -24,7 +25,7 @@ func _reset_empty() -> void:
 	state = {
 		"save_version": SAVE_VERSION,
 		"game_version": GAME_VERSION,
-		"player": {"player_name": "", "class_id": "", "current_map": "REGION_LIRIA", "position": {"x": 480.0, "y": 360.0}, "level": 1, "hp": 100, "mp": 40, "tutorial_flags": {}},
+		"player": {"player_name": "", "class_id": "", "current_map": "REGION_LIRIA", "position": {"x": LIRIA_SPAWN_POSITION.x, "y": LIRIA_SPAWN_POSITION.y}, "level": 1, "hp": 100, "mp": 40, "tutorial_flags": {}},
 		"party": {"members": []},
 		"world": {"region_id": "REGION_LIRIA", "state": "NORMAL", "flags": {"LIRIA": "NORMAL"}},
 		"quests": {"MQ00_01": {"status": "NOT_STARTED", "stage": 0, "rewarded": false}},
@@ -41,7 +42,7 @@ func new_game(player_name: String, class_id: String) -> bool:
 	_reset_empty()
 	state["player"]["player_name"] = clean_name
 	state["player"]["class_id"] = class_id
-	state["player"]["position"] = {"x": 480.0, "y": 360.0}
+	state["player"]["position"] = {"x": LIRIA_SPAWN_POSITION.x, "y": LIRIA_SPAWN_POSITION.y}
 	state_changed.emit()
 	return true
 
@@ -97,10 +98,15 @@ func complete_quest(quest_id: String) -> bool:
 	if not state["quests"].has(quest_id):
 		return false
 	var quest: Dictionary = state["quests"][quest_id]
-	if String(quest.get("status", "")) == "COMPLETE":
+	if String(quest.get("status", "")) != "ACTIVE" or int(quest.get("stage", 0)) < 3:
+		return false
+	if quest_id == "MQ00_01" and not has_item("ITEM_LANTERN"):
+		return false
+	if bool(quest.get("rewarded", false)) or String(quest.get("status", "")) == "COMPLETE":
 		return false
 	quest["status"] = "COMPLETE"
 	quest["stage"] = 4
+	quest["rewarded"] = true
 	state["quests"][quest_id] = quest
 	set_flag("MQ00_01_COMPLETE", true)
 	state_changed.emit()
@@ -147,6 +153,7 @@ func condition_passes(condition: Dictionary) -> bool:
 		"NotFlag": return not has_flag(String(condition.get("value", "")))
 		"HasItem": return has_item(String(condition.get("value", "")), int(condition.get("amount", 1)))
 		"QuestCompleted": return quest_status(String(condition.get("value", ""))) == "COMPLETE"
+		"QuestActive": return quest_status(String(condition.get("value", ""))) == "ACTIVE"
 		"ClassEquals": return String(state.get("player", {}).get("class_id", "")) == String(condition.get("value", ""))
 		_: return false
 

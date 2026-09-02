@@ -17,6 +17,22 @@ const P11_NPC_OUTPUT_REL := "assets/p1_1/npc_sheet.png"
 const P11_LIRIA_OUTPUT_REL := "assets/p1_1/liria_scene.png"
 const P11_GROUND_OUTPUT_REL := "assets/p1_1/liria_ground_tile.png"
 
+# The selected P1.1 contact sheet is a seven-row source (42 actors), not an
+# eight-row source.  The missing compass views are filled from the nearest
+# compatible source pose and mirrored into explicit output rows.  Keeping the
+# remap here makes the exported atlas deterministic and prevents runtime
+# animation code from guessing which frame belongs to a direction.
+const P12_PLAYER_DIRECTION_MAP: Array[Dictionary] = [
+	{"source_row": 0, "flip_h": false}, # N: back
+	{"source_row": 6, "flip_h": false}, # NE: back three-quarter
+	{"source_row": 5, "flip_h": true}, # E: mirrored profile
+	{"source_row": 3, "flip_h": true}, # SE: front three-quarter
+	{"source_row": 4, "flip_h": false}, # S: front
+	{"source_row": 1, "flip_h": false}, # SW: front three-quarter
+	{"source_row": 5, "flip_h": false}, # W: profile
+	{"source_row": 6, "flip_h": true} # NW: mirrored back three-quarter
+]
+
 var repo_root: String
 var project_root: String
 
@@ -94,24 +110,30 @@ func _process_p11_assets() -> bool:
 	return true
 
 func _write_player_sheet(source: Image, output_path: String) -> bool:
-	# The generated source is a six-column by eight-row contact sheet. Background
-	# checkerboard pixels are removed by connected flood fill before character
-	# regions are assigned to slots. Region assignment avoids clipping when the
-	# generator leaves a little overlap between contact-sheet rows.
+	# The selected source is a six-column by seven-row contact sheet.  Earlier
+	# processing assumed eight source rows, which split one actor between rows
+	# and shifted all later directions.  Fixed seven-row cells are safe here:
+	# each source actor has its own row and the output map below expands it to a
+	# complete, explicit eight-direction atlas.
 	var columns := 6
-	var rows := 8
-	var output := Image.create(columns * 64, rows * 64, false, Image.FORMAT_RGBA8)
+	var source_rows := 7
+	var output_rows := P12_PLAYER_DIRECTION_MAP.size()
+	var output := Image.create(columns * 64, output_rows * 64, false, Image.FORMAT_RGBA8)
 	output.fill(Color(0, 0, 0, 0))
 	var keyed := source.duplicate()
 	_remove_checker_background(keyed)
-	var regions := _find_character_regions(keyed, columns, rows)
-	for row in range(rows):
+	var source_regions := _find_character_regions(keyed, columns, source_rows)
+	for row in range(output_rows):
+		var direction_map: Dictionary = P12_PLAYER_DIRECTION_MAP[row]
+		var source_row := int(direction_map["source_row"])
+		var flip_h := bool(direction_map["flip_h"])
 		for column in range(columns):
-			var slot := row * columns + column
-			var source_rect: Rect2i = regions[slot]
+			var source_rect: Rect2i = source_regions[source_row * columns + column]
 			if source_rect.size.x <= 0 or source_rect.size.y <= 0:
-				source_rect = _proportional_rect(keyed, column, columns, row, rows)
+				source_rect = _proportional_rect(keyed, column, columns, source_row, source_rows)
 			var frame: Image = keyed.get_region(source_rect)
+			if flip_h:
+				frame.flip_x()
 			var normalized := _normalize_actor(frame, Vector2i(64, 64), Vector2i(56, 58))
 			output.blit_rect(normalized, Rect2i(Vector2i.ZERO, normalized.get_size()), Vector2i(column * 64, row * 64))
 	return output.save_png(output_path) == OK
@@ -223,7 +245,11 @@ func _is_checker_pixel(color: Color) -> bool:
 	if color.a < 0.99:
 		return false
 	var spread := maxf(color.r, maxf(color.g, color.b)) - minf(color.r, minf(color.g, color.b))
-	return color.r > 0.78 and color.g > 0.78 and color.b > 0.78 and spread < 0.08
+	# The source is an RGB checkerboard with compression/scale variation.  A
+	# slightly wider neutral-light threshold removes the fringe pixels attached
+	# to the checker without touching the dark outline or the bright sword,
+	# which are not connected to the image edge through checker pixels.
+	return color.r > 0.74 and color.g > 0.74 and color.b > 0.74 and spread < 0.12
 
 func _normalize_actor(source: Image, canvas_size: Vector2i, fit_size: Vector2i) -> Image:
 	var used := source.get_used_rect()
