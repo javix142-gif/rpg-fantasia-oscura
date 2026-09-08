@@ -47,6 +47,10 @@ func _run() -> void:
 	_check(float(main.player.invulnerable) > 0.0, "f2_dodge_iframes")
 	main.player._action_timer = 0.0
 	main.player._set_state("idle", true)
+	# The dodge test above intentionally creates i-frames. End that isolated
+	# condition before validating ordinary damage; otherwise the damage check
+	# would be testing dodge immunity rather than the normal hit path.
+	main.player.invulnerable = 0.0
 	var before_hp: int = int(main.player.hp)
 	main.player.take_damage(12, main.player.global_position + Vector2(20, 0))
 	_check(int(main.player.hp) == before_hp - 12, "f2_damage")
