@@ -114,9 +114,13 @@ jobs:
           mkdir -p game/android
           cp -a "$BUILD_ROOT" game/android/build
           chmod +x game/android/build/gradlew
+          printf '4.7.2.stable\n' > game/android/.build_version
+          : > game/android/build/.gdignore
           test -f game/android/build/gradlew
+          test -f game/android/.build_version
+          test "$(tr -d '\r\n' < game/android/.build_version)" = "4.7.2.stable"
           test -f game/android/build/build.gradle || test -f game/android/build/build.gradle.kts
-          printf 'ANDROID_SOURCE_ZIP=%s\nBUILD_ROOT=%s\n' "$SOURCE_ZIP" "$BUILD_ROOT" | tee ci_logs/android_template.log
+          printf 'ANDROID_SOURCE_ZIP=%s\nBUILD_ROOT=%s\nBUILD_VERSION=%s\n' "$SOURCE_ZIP" "$BUILD_ROOT" "$(cat game/android/.build_version)" | tee ci_logs/android_template.log
           echo ANDROID_BUILD_TEMPLATE=PASS
 
       - name: Android debug export
