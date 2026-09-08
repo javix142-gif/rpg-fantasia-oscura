@@ -11,7 +11,7 @@ const DODGE_SPEED := 310.0
 const MAX_HP := 100
 const SHEET := preload("res://assets/p1_1/player_sheet.png")
 const DIR_NAMES := ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-const DIR_VECS := [Vector2.UP, Vector2(1,-1).normalized(), Vector2.RIGHT, Vector2(1,1).normalized(), Vector2.DOWN, Vector2(-1,1).normalized(), Vector2.LEFT, Vector2(-1,-1).normalized()]
+const DIR_VECS := [Vector2(0.0,-1.0), Vector2(0.70710678,-0.70710678), Vector2(1.0,0.0), Vector2(0.70710678,0.70710678), Vector2(0.0,1.0), Vector2(-0.70710678,0.70710678), Vector2(-1.0,0.0), Vector2(-0.70710678,-0.70710678)]
 
 var hp: int = MAX_HP
 var virtual_input := Vector2.ZERO
@@ -53,7 +53,6 @@ func _build_visual() -> void:
 		var d: String = DIR_NAMES[row]
 		_add_anim(frames, "idle_" + d, row, [0,1], 3.0, true)
 		_add_anim(frames, "walk_" + d, row, [2,3,4,5], 8.0, true)
-		# M4 action states use deliberate frame timing plus procedural weapon/body motion.
 		_add_anim(frames, "attack_" + d, row, [1,2,4,5], 14.0, false)
 		_add_anim(frames, "dodge_" + d, row, [5,4,3,2], 16.0, false)
 		_add_anim(frames, "hit_" + d, row, [0,1], 12.0, false)
@@ -149,7 +148,6 @@ func request_dodge() -> bool:
 func _process_action_state() -> void:
 	if state == "attack":
 		velocity = Vector2.ZERO
-		# Real hit window is synchronized to the middle of the visual attack.
 		if not _attack_fired and _action_timer <= 0.19:
 			_attack_fired = true
 			attack_window.emit(global_position + facing.normalized() * 30.0, facing.normalized())
