@@ -228,8 +228,8 @@ func _on_attack_window(hit_pos: Vector2, facing: Vector2) -> void:
 	for enemy in enemies.duplicate():
 		if not is_instance_valid(enemy):
 			continue
-		var delta := enemy.global_position - player.global_position
-		if delta.length() <= (88.0 if enemy.is_boss else 66.0) and delta.normalized().dot(facing) > -0.15:
+		var offset: Vector2 = enemy.global_position - player.global_position
+		if offset.length() <= (88.0 if enemy.is_boss else 66.0) and offset.normalized().dot(facing) > -0.15:
 			enemy.take_damage(25, player.global_position)
 			world.spawn_fx("hit", enemy.global_position + Vector2(0,-12), 0.24)
 			hit_any = true
