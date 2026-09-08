@@ -102,8 +102,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          godot --headless --path game --install-android-build-template --quit 2>&1 | tee ci_logs/android_template.log
-          test -d game/android/build
+          TPL_DEST="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          SOURCE_ZIP="$TPL_DEST/android_source.zip"
+          test -f "$SOURCE_ZIP"
+          rm -rf /tmp/godot-android-source game/android
+          mkdir -p /tmp/godot-android-source
+          unzip -q "$SOURCE_ZIP" -d /tmp/godot-android-source
+          GRADLEW="$(find /tmp/godot-android-source -type f -name gradlew | head -1)"
+          test -n "$GRADLEW"
+          BUILD_ROOT="$(dirname "$GRADLEW")"
+          mkdir -p game/android
+          cp -a "$BUILD_ROOT" game/android/build
+          chmod +x game/android/build/gradlew
+          test -f game/android/build/gradlew
+          test -f game/android/build/build.gradle || test -f game/android/build/build.gradle.kts
+          printf 'ANDROID_SOURCE_ZIP=%s\nBUILD_ROOT=%s\n' "$SOURCE_ZIP" "$BUILD_ROOT" | tee ci_logs/android_template.log
           echo ANDROID_BUILD_TEMPLATE=PASS
 
       - name: Android debug export
