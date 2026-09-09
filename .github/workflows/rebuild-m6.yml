@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-test-android:
@@ -180,3 +181,87 @@ jobs:
             builds/android/SHA256.txt
             ci_logs/*.log
             ci_logs/abis.txt
+
+      - name: Prepare artifact ZIP that remains installable as APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/apk-repack artifact_apk_root
+          mkdir -p /tmp/apk-repack artifact_apk_root
+          unzip -q "$APK" -d /tmp/apk-repack
+          rm -rf /tmp/apk-repack/META-INF
+          (
+            cd /tmp/apk-repack
+            zip -qr /tmp/ilyrion-v1-unsigned.apk .
+          )
+          zipalign -f 4 /tmp/ilyrion-v1-unsigned.apk /tmp/ilyrion-v1-aligned.apk
+          keytool -genkeypair -noprompt \
+            -keystore /tmp/ilyrion-direct.jks \
+            -storepass android \
+            -keypass android \
+            -alias ilyriondebug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 3650 \
+            -dname "CN=Ilyrion Direct APK, OU=CI, O=Ilyrion, C=CL"
+          apksigner sign \
+            --ks /tmp/ilyrion-direct.jks \
+            --ks-key-alias ilyriondebug \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --v1-signing-enabled true \
+            --v2-signing-enabled false \
+            --v3-signing-enabled false \
+            --v4-signing-enabled false \
+            --out /tmp/ilyrion-v1.apk \
+            /tmp/ilyrion-v1-aligned.apk
+          apksigner verify --verbose --print-certs /tmp/ilyrion-v1.apk | tee ci_logs/direct_v1_source_verify.log
+          grep -q 'Verified using v1 scheme (JAR signing): true' ci_logs/direct_v1_source_verify.log
+          unzip -q /tmp/ilyrion-v1.apk -d artifact_apk_root
+          test -f artifact_apk_root/AndroidManifest.xml
+          test -d artifact_apk_root/META-INF
+          echo DIRECT_APK_PAYLOAD=PASS
+
+      - name: Upload installable APK bytes as artifact archive
+        id: direct_apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: ilyrion-reconstructed-m6-direct-apk
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          include-hidden-files: true
+          path: artifact_apk_root/
+
+      - name: Verify downloaded artifact archive is itself a valid APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIRECT_ARTIFACT_ID: ${{ steps.direct_apk.outputs.artifact-id }}
+        run: |
+          set -euo pipefail
+          test -n "$DIRECT_ARTIFACT_ID"
+          curl -fL --retry 5 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${DIRECT_ARTIFACT_ID}/zip" \
+            -o builds/android/ilyrion_reconstructed_m6_direct.apk
+          DIRECT_APK=builds/android/ilyrion_reconstructed_m6_direct.apk
+          test -s "$DIRECT_APK"
+          BADGING="$(aapt dump badging "$DIRECT_APK")"
+          echo "$BADGING" | grep -q "package: name='cl.javix142.fantasiaoscura'"
+          echo "$BADGING" | grep -q "sdkVersion:'28'"
+          echo "$BADGING" | grep -q "targetSdkVersion:'36'"
+          unzip -t "$DIRECT_APK" > ci_logs/direct_apk_zip.log
+          grep -q 'No errors detected' ci_logs/direct_apk_zip.log
+          unzip -l "$DIRECT_APK" | awk '{print $4}' | grep '^lib/' | cut -d/ -f2 | sort -u > ci_logs/direct_apk_abis.txt
+          grep -qx 'arm64-v8a' ci_logs/direct_apk_abis.txt
+          test "$(wc -l < ci_logs/direct_apk_abis.txt)" -eq 1
+          apksigner verify --verbose --print-certs "$DIRECT_APK" | tee ci_logs/direct_apk_verify.log
+          grep -q 'Verified using v1 scheme (JAR signing): true' ci_logs/direct_apk_verify.log
+          DIRECT_SHA="$(sha256sum "$DIRECT_APK" | awk '{print $1}')"
+          echo "$DIRECT_SHA  ilyrion_reconstructed_m6_direct.apk" > builds/android/SHA256_DIRECT_APK.txt
+          echo DIRECT_APK_SHA256="$DIRECT_SHA"
+          echo DIRECT_APK_ARTIFACT_ID="$DIRECT_ARTIFACT_ID"
+          echo DIRECT_APK_DOWNLOAD_ARCHIVE_IS_INSTALLABLE=PASS
