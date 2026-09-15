@@ -1,0 +1,176 @@
+name: Build Survival Prototype APK
+
+on:
+  push:
+    branches:
+      - artifact/survival-2d-apk-20260915
+    paths:
+      - survival_prototype/**
+      - .github/workflows/build-survival-prototype.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GODOT_VERSION: "4.7.2"
+      XDG_DATA_HOME: ${{ github.workspace }}/.ci-data
+      XDG_CONFIG_HOME: ${{ github.workspace }}/.ci-config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Verify Java and Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -version
+          JAVA_MAJOR="$(java -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -n1)"
+          if [[ "$JAVA_MAJOR" != "17" ]]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y openjdk-17-jdk
+          fi
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_ACTUAL="$(dirname "$(dirname "$JAVA_BIN")")"
+          echo "JAVA_HOME_ACTUAL=$JAVA_HOME_ACTUAL" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -d "${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+
+      - name: Ensure Android API 36 and Build Tools 36.0.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-36" "build-tools;36.0.0" >/dev/null
+          "$SDK_ROOT/build-tools/36.0.0/aapt" version
+          "$SDK_ROOT/build-tools/36.0.0/apksigner" version
+
+      - name: Install verified Godot 4.7.2 and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT_ZIP="$RUNNER_TEMP/Godot_v4.7.2-stable_linux.x86_64.zip"
+          TEMPLATES="$RUNNER_TEMP/Godot_v4.7.2-stable_export_templates.tpz"
+          curl -fL --retry 5 --retry-delay 3 \
+            "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" \
+            -o "$GODOT_ZIP"
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $GODOT_ZIP" | sha256sum -c -
+          curl -fL --retry 5 --retry-delay 3 \
+            "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" \
+            -o "$TEMPLATES"
+          echo "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011  $TEMPLATES" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/godot" "$RUNNER_TEMP/template-stage" "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable"
+          unzip -q "$GODOT_ZIP" -d "$RUNNER_TEMP/godot"
+          unzip -q "$TEMPLATES" -d "$RUNNER_TEMP/template-stage"
+          cp -a "$RUNNER_TEMP/template-stage/templates/." "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/"
+          GODOT_BIN="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          "$GODOT_BIN" --version
+          rm -f "$GODOT_ZIP" "$TEMPLATES"
+          rm -rf "$RUNNER_TEMP/template-stage"
+
+      - name: Configure Godot Android paths and import project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
+          "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/godot-import.log"; then
+            exit 1
+          fi
+          SETTINGS="$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres"
+          test -f "$SETTINGS"
+          set_path() {
+            local key="$1" value="$2"
+            if grep -q "^${key} =" "$SETTINGS"; then
+              sed -i "s|^${key} =.*|${key} = \"${value}\"|" "$SETTINGS"
+            else
+              printf '%s = "%s"\n' "$key" "$value" >> "$SETTINGS"
+            fi
+          }
+          set_path "export/android/android_sdk_path" "${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          set_path "export/android/java_sdk_path" "$JAVA_HOME_ACTUAL"
+
+      - name: Create debug keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          if [[ ! -f "$HOME/.android/debug.keystore" ]]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
+          fi
+
+      - name: Export Android debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-survival-debug.apk"
+          mkdir -p "$(dirname "$OUT")"
+          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" \
+            --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/godot-export.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Export failed" "$RUNNER_TEMP/godot-export.log"; then
+            exit 1
+          fi
+          test -s "$OUT"
+
+      - name: Independently verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-survival-debug.apk"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          BT="$SDK_ROOT/build-tools/36.0.0"
+          "$BT/aapt" dump badging "$APK" | tee "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
+          grep -F "package: name='org.cenizasalvaje.prototype'" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
+          grep -F "targetSdkVersion:'36'" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
+          grep -F "launchable-activity:" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$GITHUB_WORKSPACE/survival_prototype/build/signature.txt"
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$GITHUB_WORKSPACE/survival_prototype/build/zipalign.txt"
+          unzip -tq "$APK"
+          mapfile -t ABIS < <(zipinfo -1 "$APK" | awk -F/ '/^lib\/[^/]+\//{print $2}' | sort -u)
+          printf 'ABIS=%s\n' "${ABIS[*]}"
+          [[ "${#ABIS[@]}" -eq 1 && "${ABIS[0]}" == "arm64-v8a" ]]
+          cd "$GITHUB_WORKSPACE/survival_prototype/build"
+          sha256sum Ceniza-Salvaje-survival-debug.apk | tee SHA256.txt
+          SIZE="$(stat -c '%s' Ceniza-Salvaje-survival-debug.apk)"
+          SHA="$(awk '{print $1}' SHA256.txt)"
+          {
+            echo "BUILD_STATUS=PASS"
+            echo "APK=Ceniza-Salvaje-survival-debug.apk"
+            echo "PACKAGE=org.cenizasalvaje.prototype"
+            echo "GODOT=4.7.2.stable"
+            echo "TARGET_SDK=36"
+            echo "ABI=arm64-v8a"
+            echo "SIZE_BYTES=$SIZE"
+            echo "SHA256=$SHA"
+            echo "SIGNATURE=debug verified"
+            echo "ZIP_INTEGRITY=PASS"
+            echo "ZIPALIGN_16K=PASS"
+          } | tee APK_METADATA.txt
+
+      - name: Upload verified APK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Ceniza-Salvaje-survival-android-debug
+          path: |
+            survival_prototype/build/Ceniza-Salvaje-survival-debug.apk
+            survival_prototype/build/SHA256.txt
+            survival_prototype/build/APK_METADATA.txt
+            survival_prototype/build/aapt-badging.txt
+            survival_prototype/build/signature.txt
+            survival_prototype/build/zipalign.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
