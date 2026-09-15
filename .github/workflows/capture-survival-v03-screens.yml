@@ -1,0 +1,155 @@
+name: Capture Ceniza Salvaje v0.3 Screens
+
+on:
+  push:
+    branches:
+      - artifact/survival-v0.3-core-pass
+    paths:
+      - '.github/workflows/capture-survival-v03-screens.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture-screens:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact v0.3 state
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+
+      - name: Install verified Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/Godot.zip"
+          curl -fL --retry 5 "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" -o "$ZIP"
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $ZIP" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/godot"
+          unzip -q "$ZIP" -d "$RUNNER_TEMP/godot"
+          GODOT_BIN="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          "$GODOT_BIN" --version
+          command -v xvfb-run
+
+      - name: Create external capture harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/capture_v03.gd" <<'GDSCRIPT'
+          extends SceneTree
+
+          var game: Node
+          var out_dir := ""
+
+          func _initialize() -> void:
+              out_dir = OS.get_environment("CAPTURE_DIR")
+              DirAccess.make_dir_recursive_absolute(out_dir)
+              var packed = load("res://main.tscn")
+              game = packed.instantiate()
+              root.add_child(game)
+              await _frames(90)
+              await _shot("01_gameplay_spawn.png")
+
+              # Estado de revisión: recursos suficientes para que las pantallas sean legibles.
+              game.inventory = {"madera": 18, "piedra": 11, "fibra": 8, "comida": 5, "mineral": 2, "venda": 2}
+              game.owned_tools = {"hacha": true, "pico": true}
+              game.equipped_tool = "hacha"
+              game.menu_mode = "backpack"
+              game.menu_tab = "inventory"
+              game.queue_redraw()
+              await _frames(12)
+              await _shot("02_inventario.png")
+
+              game.menu_tab = "craft"
+              game.queue_redraw()
+              await _frames(12)
+              await _shot("03_fabricacion.png")
+
+              game.menu_tab = "build"
+              game.queue_redraw()
+              await _frames(12)
+              await _shot("04_construccion_menu.png")
+
+              game.menu_mode = ""
+              game.placement_type = "cofre"
+              game.placement_pos = game.player_pos + Vector2(72, 16)
+              game.placement_rotation = 0
+              game.queue_redraw()
+              await _frames(12)
+              await _shot("05_colocacion_cofre.png")
+
+              game.placement_type = ""
+              game.menu_mode = "map"
+              game.queue_redraw()
+              await _frames(12)
+              await _shot("06_mapa.png")
+
+              quit(0)
+
+          func _frames(n: int) -> void:
+              for i in range(n):
+                  await process_frame
+
+          func _shot(name: String) -> void:
+              await process_frame
+              await RenderingServer.frame_post_draw
+              var img := root.get_viewport().get_texture().get_image()
+              var path := out_dir.path_join(name)
+              var err := img.save_png(path)
+              if err != OK:
+                  push_error("No se pudo guardar %s: %s" % [path, err])
+                  quit(2)
+          GDSCRIPT
+
+      - name: Capture current v0.3 UI and gameplay
+        shell: bash
+        env:
+          CAPTURE_DIR: ${{ github.workspace }}/Ceniza-Salvaje-v0.3-capturas
+        run: |
+          set -euo pipefail
+          mkdir -p "$CAPTURE_DIR"
+          xvfb-run -a -s "-screen 0 640x360x24" "$GODOT_BIN" --path "$GITHUB_WORKSPACE/survival_prototype" --script "$RUNNER_TEMP/capture_v03.gd" 2>&1 | tee "$RUNNER_TEMP/capture.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|ERROR:.*script" "$RUNNER_TEMP/capture.log"; then exit 1; fi
+          test "$(find "$CAPTURE_DIR" -maxdepth 1 -name '*.png' | wc -l)" -eq 6
+          file "$CAPTURE_DIR"/*.png
+
+      - name: Package screenshots ZIP and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$GITHUB_WORKSPACE/Ceniza-Salvaje-v0.3-capturas.zip"
+          rm -f "$ZIP"
+          (cd "$GITHUB_WORKSPACE" && zip -q -r "$ZIP" "Ceniza-Salvaje-v0.3-capturas")
+          unzip -tq "$ZIP"
+          SIZE=$(stat -c '%s' "$ZIP")
+          SHA=$(sha256sum "$ZIP" | awk '{print $1}')
+          printf 'ZIP_PATH=%s\nZIP_SIZE_BYTES=%s\nZIP_SHA256=%s\nSOURCE_COMMIT=%s\nSCREENSHOTS=6\n' "$ZIP" "$SIZE" "$SHA" "$GITHUB_SHA" | tee "$GITHUB_WORKSPACE/capturas-info.txt"
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Ceniza-Salvaje-v0.3-capturas
+          path: |
+            Ceniza-Salvaje-v0.3-capturas.zip
+            capturas-info.txt
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish direct screenshots ZIP
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ceniza-salvaje-v0.3-capturas
+        run: |
+          set -euo pipefail
+          ZIP="$GITHUB_WORKSPACE/Ceniza-Salvaje-v0.3-capturas.zip"
+          INFO="$GITHUB_WORKSPACE/capturas-info.txt"
+          if gh release view "$TAG" --repo "javix142-gif/rpg-fantasia-oscura" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" "$INFO" --repo "javix142-gif/rpg-fantasia-oscura" --clobber
+          else
+            gh release create "$TAG" "$ZIP" "$INFO" --repo "javix142-gif/rpg-fantasia-oscura" --target "artifact/survival-v0.3-core-pass" --title "Ceniza Salvaje v0.3 - Capturas" --notes "Capturas generadas directamente desde el runtime actual v0.3 para revisión visual." --prerelease
+          fi
