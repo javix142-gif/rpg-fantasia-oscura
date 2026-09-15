@@ -1,13 +1,15 @@
-; Ceniza Salvaje - survival 2D procedural mobile prototype
-; Isolated artifact branch. Godot 4.7.2 / Android landscape.
+; Ceniza Salvaje v0.2 - vertical slice survival procedural mobile
+; Godot 4.7.2 / Android landscape / GL Compatibility.
 
 config_version=5
 
 [application]
 
-config/name="Ceniza Salvaje"
+config/name="Ceniza Salvaje v0.2"
+config/description="Survival 2D procedural por chunks"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
 
 [display]
 
@@ -23,6 +25,7 @@ window/handheld/orientation=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0
 textures/vram_compression/import_etc2_astc=true
 
 audio/driver/enable_input=false
