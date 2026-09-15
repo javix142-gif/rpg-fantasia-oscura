@@ -1,0 +1,6 @@
+Ceniza Salvaje v0.2 Vertical Slice
+Build target: Android arm64-v8a
+World: deterministic 512x512 chunks, 5x5 active window, unbounded coordinates
+UX: crafting menu, build menu, placement preview, mobile icon controls
+Visuals: procedural pixel-art player/enemies/resources/buildings with action feedback
+Persistence: sparse chunk modifications and constructions
