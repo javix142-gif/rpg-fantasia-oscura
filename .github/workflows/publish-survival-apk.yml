@@ -1,0 +1,57 @@
+name: Publish Survival APK
+
+on:
+  push:
+    branches:
+      - artifact/survival-2d-apk-20260915
+    paths:
+      - .github/workflows/publish-survival-apk.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "34957324656"
+      ARTIFACT_NAME: "Ceniza-Salvaje-survival-android-debug"
+      TAG: "ceniza-salvaje-prototype-v0.1.0"
+    steps:
+      - name: Download validated APK artifact
+        run: |
+          mkdir -p dist
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "${{ github.repository }}" \
+            --name "$ARTIFACT_NAME" \
+            --dir dist
+
+      - name: Verify package files
+        run: |
+          set -euo pipefail
+          test -f dist/Ceniza-Salvaje-survival-debug.apk
+          if [ -f dist/SHA256.txt ]; then
+            (cd dist && sha256sum -c SHA256.txt)
+          else
+            sha256sum dist/Ceniza-Salvaje-survival-debug.apk
+          fi
+          ls -lh dist/Ceniza-Salvaje-survival-debug.apk
+
+      - name: Publish prerelease asset
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/Ceniza-Salvaje-survival-debug.apk \
+              --repo "${{ github.repository }}" \
+              --clobber
+          else
+            gh release create "$TAG" dist/Ceniza-Salvaje-survival-debug.apk \
+              --repo "${{ github.repository }}" \
+              --target "artifact/survival-2d-apk-20260915" \
+              --title "Ceniza Salvaje Prototype v0.1.0" \
+              --notes "APK Android arm64-v8a compilado y validado desde el workflow exitoso 34957324656." \
+              --prerelease
+          fi
