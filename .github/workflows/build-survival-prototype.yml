@@ -109,8 +109,11 @@ jobs:
           set -euo pipefail
           ANDROID_DIR="$GITHUB_WORKSPACE/survival_prototype/android"
           rm -rf "$ANDROID_DIR"
-          mkdir -p "$ANDROID_DIR/build"
+          mkdir -p "$ANDROID_DIR/build" "$ANDROID_DIR/plugins"
           unzip -q "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/android_source.zip" -d "$ANDROID_DIR/build"
+          printf '%s\n' "4.7.2.stable" > "$ANDROID_DIR/.build_version"
+          touch "$ANDROID_DIR/build/.gdignore"
+          test "$(tr -d '\r\n' < "$ANDROID_DIR/.build_version")" = "4.7.2.stable"
           test -f "$ANDROID_DIR/build/gradlew"
           chmod +x "$ANDROID_DIR/build/gradlew"
           test -f "$ANDROID_DIR/build/config.gradle"
