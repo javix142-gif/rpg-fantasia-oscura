@@ -1,0 +1,104 @@
+name: Package Ceniza Salvaje v0.3 review ZIP
+
+on:
+  push:
+    branches:
+      - artifact/survival-v0.3-core-pass
+    paths:
+      - .github/workflows/package-survival-v03-review.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact current branch state
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+
+      - name: Create review snapshot outside project folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/survival_prototype"
+          OUT="$GITHUB_WORKSPACE/Ceniza-Salvaje-v0.3-review.zip"
+          STAGE="$RUNNER_TEMP/Ceniza-Salvaje-v0.3"
+          rm -rf "$STAGE" "$OUT"
+          mkdir -p "$STAGE"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+
+          src = Path('survival_prototype')
+          dst = Path(__import__('os').environ['RUNNER_TEMP']) / 'Ceniza-Salvaje-v0.3'
+
+          excluded_dirs = {
+              '.godot', 'build', 'android', '__pycache__', '.cache', 'cache', 'caches',
+              'logs', 'log', 'tmp', 'temp'
+          }
+          excluded_suffixes = {'.log', '.tmp', '.cache', '.bak', '.swp'}
+
+          copied = []
+          for path in sorted(src.rglob('*')):
+              rel = path.relative_to(src)
+              if any(part in excluded_dirs for part in rel.parts):
+                  continue
+              if path.is_dir():
+                  continue
+              if path.suffix.lower() in excluded_suffixes:
+                  continue
+              target = dst / rel
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(path, target)
+              copied.append(str(rel))
+
+          print(f'Included files: {len(copied)}')
+          for p in copied:
+              print(p)
+          PY
+
+          (cd "$RUNNER_TEMP" && zip -q -r "$OUT" "Ceniza-Salvaje-v0.3")
+          test -s "$OUT"
+          unzip -tq "$OUT"
+
+          SIZE_BYTES=$(stat -c '%s' "$OUT")
+          SHA256=$(sha256sum "$OUT" | awk '{print $1}')
+          printf 'ZIP_PATH=%s\nZIP_SIZE_BYTES=%s\nZIP_SHA256=%s\nSOURCE_COMMIT=%s\n' \
+            "$OUT" "$SIZE_BYTES" "$SHA256" "$GITHUB_SHA" | tee "$GITHUB_WORKSPACE/review-package-info.txt"
+
+      - name: Upload review ZIP artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Ceniza-Salvaje-v0.3-review
+          path: |
+            Ceniza-Salvaje-v0.3-review.zip
+            review-package-info.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish direct review ZIP
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ceniza-salvaje-v0.3-review-snapshot
+        run: |
+          set -euo pipefail
+          ZIP="$GITHUB_WORKSPACE/Ceniza-Salvaje-v0.3-review.zip"
+          INFO="$GITHUB_WORKSPACE/review-package-info.txt"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" "$INFO" --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "$TAG" "$ZIP" "$INFO" \
+              --repo "${{ github.repository }}" \
+              --target "artifact/survival-v0.3-core-pass" \
+              --title "Ceniza Salvaje v0.3 - Review Snapshot" \
+              --notes "Snapshot de revisión del vertical slice actual. Empaquetado sin refactor ni limpieza previa; excluye .godot, logs, cachés y builds intermedios." \
+              --prerelease
+          fi
