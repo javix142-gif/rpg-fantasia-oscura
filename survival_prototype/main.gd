@@ -348,7 +348,7 @@ func _cycle_build() -> void:
 	_set_message("Construcción: %s" % BUILDS[build_index], 1.0)
 
 func _craft_selected() -> void:
-	var item := CRAFTS[craft_index]
+	var item: String = String(CRAFTS[craft_index])
 	if item == "hacha":
 		if not _spend({"madera": 5, "piedra": 3}): return
 		inventory["hacha"] = 1
@@ -361,7 +361,7 @@ func _craft_selected() -> void:
 	_set_message("Fabricado: %s" % item, 1.8)
 
 func _build_selected() -> void:
-	var item := BUILDS[build_index]
+	var item: String = String(BUILDS[build_index])
 	var cost := {"madera": 6, "piedra": 4}
 	if item == "muro": cost = {"madera": 5}
 	elif item == "cofre": cost = {"madera": 8, "piedra": 2}
@@ -443,8 +443,8 @@ func _respawn() -> void:
 func _biome_at(p: Vector2) -> String:
 	var cx := int(floor(p.x / 260.0))
 	var cy := int(floor(p.y / 260.0))
-	var n := abs((cx * 73856093) ^ (cy * 19349663) ^ world_seed)
-	var v := n % 100
+	var n: int = absi((cx * 73856093) ^ (cy * 19349663) ^ world_seed)
+	var v: int = n % 100
 	if v < 42: return "bosque"
 	if v < 73: return "pradera"
 	return "cenizal"
@@ -474,11 +474,11 @@ func _draw_world() -> void:
 		for x in range(first_x, first_x + 13):
 			var wp := Vector2(float(x) * TILE, float(y) * TILE)
 			var c := _biome_color(_biome_at(wp + Vector2(TILE * 0.5, TILE * 0.5)))
-			var variation := float(abs((x * 92821) ^ (y * 68917) ^ world_seed) % 7) / 100.0
+			var variation := float(absi((x * 92821) ^ (y * 68917) ^ world_seed) % 7) / 100.0
 			c = c.lightened(variation)
 			draw_rect(Rect2(_to_screen(wp), Vector2(TILE + 1.0, TILE + 1.0)), c)
 			if ((x + y + world_seed) % 5) == 0:
-				var sp := _to_screen(wp) + Vector2(12 + abs(x * 13) % 38, 12 + abs(y * 17) % 38)
+				var sp := _to_screen(wp) + Vector2(12 + absi(x * 13) % 38, 12 + absi(y * 17) % 38)
 				draw_circle(sp, 1.5, Color(1, 1, 1, 0.11))
 
 func _draw_resources() -> void:
@@ -531,7 +531,7 @@ func _draw_enemies() -> void:
 		draw_circle(sp, 9, Color(0.08, 0.06, 0.07, 0.6))
 		draw_circle(sp + Vector2(0, -2), 7, color)
 		draw_circle(sp + Vector2(-2, -3), 1.1, Color.WHITE)
-		var ratio := clamp(float(e["hp"]) / float(e["max_hp"]), 0.0, 1.0)
+		var ratio: float = clampf(float(e["hp"]) / float(e["max_hp"]), 0.0, 1.0)
 		draw_rect(Rect2(sp + Vector2(-10, -15), Vector2(20, 2)), Color(0.15, 0.05, 0.05, 0.9))
 		draw_rect(Rect2(sp + Vector2(-10, -15), Vector2(20 * ratio, 2)), Color("#e65b55"))
 
@@ -559,7 +559,7 @@ func _draw_lighting_and_weather() -> void:
 		draw_rect(Rect2(Vector2.ZERO, SCREEN), Color(0.78, 0.80, 0.77, 0.16))
 
 func _draw_hud() -> void:
-	var font := ThemeDB.fallback_font
+	var font: Font = ThemeDB.fallback_font
 	draw_rect(Rect2(6, 6, 500, 55), Color(0.035, 0.045, 0.05, 0.78))
 	_draw_bar(Vector2(12, 12), 118, hp, Color("#cf4b4b"), "PV")
 	_draw_bar(Vector2(12, 28), 118, hunger, Color("#d49a43"), "HAM")
@@ -570,12 +570,12 @@ func _draw_hud() -> void:
 	draw_string(font, Vector2(140, 38), tools, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("#d7ddcf"))
 	var state := "Día %d · %s · %s · seed %d" % [day_number, weather, _biome_at(player_pos), world_seed]
 	draw_string(font, Vector2(140, 54), state, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#c5cbbb"))
-	_draw_small_button(Rect2(510, 6, 58, 24), "REC:%s" % CRAFTS[craft_index].substr(0, 3).to_upper())
-	_draw_small_button(Rect2(573, 6, 61, 24), "CON:%s" % BUILDS[build_index].substr(0, 3).to_upper())
+	_draw_small_button(Rect2(510, 6, 58, 24), "REC:%s" % String(CRAFTS[craft_index]).substr(0, 3).to_upper())
+	_draw_small_button(Rect2(573, 6, 61, 24), "CON:%s" % String(BUILDS[build_index]).substr(0, 3).to_upper())
 	var recipe := _recipe_text()
 	draw_string(font, Vector2(512, 45), recipe, HORIZONTAL_ALIGNMENT_LEFT, 124, 9, Color("#e9e2c9"))
 	if message_timer > 0.0 and not message.is_empty():
-		var width := min(490.0, max(210.0, float(message.length()) * 6.0 + 20.0))
+		var width: float = minf(490.0, maxf(210.0, float(message.length()) * 6.0 + 20.0))
 		draw_rect(Rect2(CENTER.x - width * 0.5, 72, width, 24), Color(0.02, 0.025, 0.03, 0.82))
 		draw_string(font, Vector2(CENTER.x - width * 0.5 + 9, 89), message, HORIZONTAL_ALIGNMENT_CENTER, width - 18, 11, Color.WHITE)
 	var help := "WASD/mover · E/recolectar · ESP/atacar · C/fabricar · B/construir · F/comer · H/venda · Q/R/cambiar"
@@ -608,7 +608,7 @@ func _draw_action_button(center: Vector2, label: String, color: Color) -> void:
 	draw_string(ThemeDB.fallback_font, center + Vector2(-12, 6), label, HORIZONTAL_ALIGNMENT_CENTER, 24, 14, Color.WHITE)
 
 func _recipe_text() -> String:
-	var c := CRAFTS[craft_index]
+	var c: String = String(CRAFTS[craft_index])
 	if c == "hacha": return "5 mad + 3 pie"
 	if c == "pico": return "4 mad + 5 pie"
 	return "3 fibra"
