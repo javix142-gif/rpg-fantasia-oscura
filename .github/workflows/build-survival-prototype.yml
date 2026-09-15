@@ -79,6 +79,7 @@ jobs:
           chmod +x "$GODOT_BIN"
           echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
           "$GODOT_BIN" --version
+          test -f "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/android_source.zip"
 
       - name: Configure Godot Android paths and import project
         shell: bash
@@ -106,10 +107,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf "$GITHUB_WORKSPACE/survival_prototype/android"
-          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --install-android-build-template
-          test -f "$GITHUB_WORKSPACE/survival_prototype/android/build/gradlew"
-          chmod +x "$GITHUB_WORKSPACE/survival_prototype/android/build/gradlew"
+          ANDROID_DIR="$GITHUB_WORKSPACE/survival_prototype/android"
+          rm -rf "$ANDROID_DIR"
+          mkdir -p "$ANDROID_DIR/build"
+          unzip -q "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/android_source.zip" -d "$ANDROID_DIR/build"
+          test -f "$ANDROID_DIR/build/gradlew"
+          chmod +x "$ANDROID_DIR/build/gradlew"
+          test -f "$ANDROID_DIR/build/config.gradle"
 
       - name: Create debug keystore
         shell: bash
