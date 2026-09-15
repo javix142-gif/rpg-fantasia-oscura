@@ -25,6 +25,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Normalize and persist v0.2 source fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 survival_prototype/ci_source_fix.py
+          if ! git diff --quiet -- survival_prototype/v02.gd; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add survival_prototype/v02.gd
+            git commit -m "Fix v0.2 GDScript parse issues [skip ci]"
+            git push origin HEAD:artifact/survival-v0.2-build
+          fi
+
       - name: Prepare Java and Android SDK
         shell: bash
         run: |
@@ -63,7 +76,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
           "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/import.log"
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/import.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/import.log"; then exit 1; fi
           SETTINGS="$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres"
           test -f "$SETTINGS"
           set_path() {
@@ -104,7 +117,7 @@ jobs:
           OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-v0.2-arm64-debug.apk"
           mkdir -p "$(dirname "$OUT")"
           "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/export.log"
-          ! grep -E "SCRIPT ERROR|Parse Error|Compile Error|Export failed|BUILD FAILED" "$RUNNER_TEMP/export.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Export failed|BUILD FAILED" "$RUNNER_TEMP/export.log"; then exit 1; fi
           test -s "$OUT"
 
       - name: Verify APK contract
