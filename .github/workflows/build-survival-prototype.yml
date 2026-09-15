@@ -1,11 +1,12 @@
-name: Build Ceniza Salvaje v0.2 APK
+name: Build Ceniza Salvaje v0.3 APK
 
 on:
   push:
     branches:
-      - artifact/survival-v0.2-build
+      - artifact/survival-v0.3-core-pass
     paths:
       - survival_prototype/**
+      - .github/workflows/build-survival-prototype.yml
   workflow_dispatch:
 
 permissions:
@@ -25,18 +26,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Normalize and persist v0.2 source fixes
+      - name: Generate and persist v0.3 runtime
         shell: bash
         run: |
           set -euo pipefail
-          python3 survival_prototype/ci_source_fix.py
-          if ! git diff --quiet -- survival_prototype/v02.gd; then
+          python3 survival_prototype/ci_generate_v03.py
+          test -s survival_prototype/v03.gd
+          if ! git diff --quiet -- survival_prototype/v03.gd || ! git ls-files --error-unmatch survival_prototype/v03.gd >/dev/null 2>&1; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add survival_prototype/v02.gd
-            git commit -m "Fix v0.2 GDScript parse issues [skip ci]"
-            git push origin HEAD:artifact/survival-v0.2-build
+            git add survival_prototype/v03.gd
+            git commit -m "Generate v0.3 core survival runtime [skip ci]"
+            git push origin HEAD:artifact/survival-v0.3-core-pass
           fi
+
+      - name: Verify v0.3 gameplay contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s = Path('survival_prototype/v03.gd').read_text(encoding='utf-8')
+          required = [
+              'ATTACK_WINDUP', 'ATTACK_ACTIVE', 'ATTACK_RECOVERY', 'ATTACK_COST',
+              'STAMINA_REGEN_DELAY', 'SAFE_RADIUS', '_update_wolf', '_update_stalker',
+              '_update_raider', '_start_harvest', '_draw_inventory_tab', '_draw_chest_menu',
+              '_set_placement_from_screen', '_building_blocks_circle', '_draw_minimap',
+              '_draw_full_map', 'explored_chunks', '_update_tutorial', 'owned_tools',
+              'equipped_tool', '_chest_transfer_all'
+          ]
+          missing = [x for x in required if x not in s]
+          assert not missing, f'Missing v0.3 contract tokens: {missing}'
+          assert 'WORLD_LIMIT' not in s
+          assert 'const ATTACK_RANGE := 44.0' in s
+          assert 'const WALK_SPEED := 76.0' in s
+          assert 'const SAFE_RADIUS := 520.0' in s
+          print('v0.3 gameplay contract: PASS')
+          PY
 
       - name: Prepare Java and Android SDK
         shell: bash
@@ -75,8 +101,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
-          "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/import.log"
-          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/import.log"; then exit 1; fi
+          "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/import-v03.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/import-v03.log"; then exit 1; fi
           SETTINGS="$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres"
           test -f "$SETTINGS"
           set_path() {
@@ -91,11 +117,11 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          timeout 6s "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" > "$RUNNER_TEMP/runtime.log" 2>&1
+          timeout 8s "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" > "$RUNNER_TEMP/runtime-v03.log" 2>&1
           CODE=$?
           set -e
-          cat "$RUNNER_TEMP/runtime.log"
-          if grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Attempt to call|ERROR:.*script" "$RUNNER_TEMP/runtime.log"; then exit 1; fi
+          cat "$RUNNER_TEMP/runtime-v03.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Attempt to call|ERROR:.*script" "$RUNNER_TEMP/runtime-v03.log"; then exit 1; fi
           if [[ "$CODE" -ne 0 && "$CODE" -ne 124 ]]; then exit "$CODE"; fi
 
       - name: Install Gradle Android template
@@ -110,14 +136,14 @@ jobs:
           touch "$ANDROID_DIR/build/.gdignore"
           chmod +x "$ANDROID_DIR/build/gradlew"
 
-      - name: Export v0.2 Android APK
+      - name: Export v0.3 Android APK
         shell: bash
         run: |
           set -euo pipefail
-          OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-v0.2-arm64-debug.apk"
+          OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-v0.3-arm64-debug.apk"
           mkdir -p "$(dirname "$OUT")"
-          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/export.log"
-          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Export failed|BUILD FAILED" "$RUNNER_TEMP/export.log"; then exit 1; fi
+          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/export-v03.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Export failed|BUILD FAILED" "$RUNNER_TEMP/export-v03.log"; then exit 1; fi
           test -s "$OUT"
 
       - name: Verify APK contract
@@ -125,38 +151,38 @@ jobs:
         run: |
           set -euo pipefail
           BUILD="$GITHUB_WORKSPACE/survival_prototype/build"
-          APK="$BUILD/Ceniza-Salvaje-v0.2-arm64-debug.apk"
+          APK="$BUILD/Ceniza-Salvaje-v0.3-arm64-debug.apk"
           BT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools/35.0.0"
-          "$BT/aapt" dump badging "$APK" | tee "$BUILD/aapt-v02.txt"
-          grep -F "package: name='org.cenizasalvaje.v02'" "$BUILD/aapt-v02.txt"
-          grep -F "sdkVersion:'24'" "$BUILD/aapt-v02.txt"
-          grep -F "targetSdkVersion:'35'" "$BUILD/aapt-v02.txt"
-          grep -F "native-code: 'arm64-v8a'" "$BUILD/aapt-v02.txt"
-          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-v02.txt"
-          grep -F "android.intent.action.MAIN" "$BUILD/manifest-v02.txt"
-          grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-v02.txt"
-          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$BUILD/signature-v02.txt"
-          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$BUILD/signature-v02.txt"
-          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$BUILD/zipalign-v02.txt"
+          "$BT/aapt" dump badging "$APK" | tee "$BUILD/aapt-v03.txt"
+          grep -F "package: name='org.cenizasalvaje.v03'" "$BUILD/aapt-v03.txt"
+          grep -F "sdkVersion:'24'" "$BUILD/aapt-v03.txt"
+          grep -F "targetSdkVersion:'35'" "$BUILD/aapt-v03.txt"
+          grep -F "native-code: 'arm64-v8a'" "$BUILD/aapt-v03.txt"
+          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-v03.txt"
+          grep -F "android.intent.action.MAIN" "$BUILD/manifest-v03.txt"
+          grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-v03.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$BUILD/signature-v03.txt"
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$BUILD/signature-v03.txt"
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$BUILD/zipalign-v03.txt"
           unzip -tq "$APK"
           mapfile -t ABIS < <(zipinfo -1 "$APK" | awk -F/ '/^lib\/[^/]+\//{print $2}' | sort -u)
           [[ "${#ABIS[@]}" -eq 1 && "${ABIS[0]}" == "arm64-v8a" ]]
           cd "$BUILD"
-          sha256sum Ceniza-Salvaje-v0.2-arm64-debug.apk | tee SHA256-v02.txt
-          printf 'BUILD_STATUS=PASS\nPACKAGE=org.cenizasalvaje.v02\nVERSION=0.2.0-vertical-slice\nMIN_SDK=24\nTARGET_SDK=35\nABI=arm64-v8a\nCHUNKS=5x5 active, unbounded coordinates\n' > APK_METADATA_v02.txt
+          sha256sum Ceniza-Salvaje-v0.3-arm64-debug.apk | tee SHA256-v03.txt
+          printf 'BUILD_STATUS=PASS\nPACKAGE=org.cenizasalvaje.v03\nVERSION=0.3.0-core-survival\nMIN_SDK=24\nTARGET_SDK=35\nABI=arm64-v8a\nCHUNKS=5x5 active, unbounded coordinates\nSAFE_RADIUS=520\nCOMBAT=windup-active-recovery+stamina\nINVENTORY=mobile equipment/food/bandage\nMAP=explored chunks\n' > APK_METADATA_v03.txt
 
-      - name: Upload v0.2 artifact
+      - name: Upload v0.3 artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Ceniza-Salvaje-v0.2-vertical-slice-android
+          name: Ceniza-Salvaje-v0.3-core-survival-android
           path: |
-            survival_prototype/build/Ceniza-Salvaje-v0.2-arm64-debug.apk
-            survival_prototype/build/SHA256-v02.txt
-            survival_prototype/build/APK_METADATA_v02.txt
-            survival_prototype/build/aapt-v02.txt
-            survival_prototype/build/manifest-v02.txt
-            survival_prototype/build/signature-v02.txt
-            survival_prototype/build/zipalign-v02.txt
+            survival_prototype/build/Ceniza-Salvaje-v0.3-arm64-debug.apk
+            survival_prototype/build/SHA256-v03.txt
+            survival_prototype/build/APK_METADATA_v03.txt
+            survival_prototype/build/aapt-v03.txt
+            survival_prototype/build/manifest-v03.txt
+            survival_prototype/build/signature-v03.txt
+            survival_prototype/build/zipalign-v03.txt
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
@@ -165,12 +191,13 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ceniza-salvaje-v0.2-vertical-slice
+          TAG: ceniza-salvaje-v0.3-core-survival
         run: |
           set -euo pipefail
-          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-v0.2-arm64-debug.apk"
+          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-v0.3-arm64-debug.apk"
+          NOTES="Core Survival Pass: timing de combate con stamina y compromiso de acción, IA diferenciada, recolección y economía revisadas, inventario/equipamiento móvil, cofres reales, construcción con drag/rotación, colisiones, zona segura, minimapa/mapa y onboarding persistente."
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
           else
-            gh release create "$TAG" "$APK" --repo "${{ github.repository }}" --target "artifact/survival-v0.2-build" --title "Ceniza Salvaje v0.2 Vertical Slice" --notes "Chunks procedurales 5x5, pixel-art procedural animado, combate/recolección con feedback, crafting y construcción con preview, HUD móvil rediseñado y persistencia por chunk." --prerelease
+            gh release create "$TAG" "$APK" --repo "${{ github.repository }}" --target "artifact/survival-v0.3-core-pass" --title "Ceniza Salvaje v0.3 Core Survival Pass" --notes "$NOTES" --prerelease
           fi
