@@ -130,11 +130,11 @@ jobs:
             -dname "CN=Ceniza Salvaje Debug,O=OpenAI Build,C=CL" \
             -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
 
-      - name: Export Android compatibility APK with Gradle
+      - name: Export Android ARM64 compatibility APK with Gradle
         shell: bash
         run: |
           set -euo pipefail
-          OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-compat-debug.apk"
+          OUT="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-compat-arm64-debug.apk"
           mkdir -p "$(dirname "$OUT")"
           "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" \
             --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/godot-export.log"
@@ -143,87 +143,84 @@ jobs:
           fi
           test -s "$OUT"
 
-      - name: Independently verify compatibility APK
+      - name: Independently verify ARM64 compatibility APK
         shell: bash
         run: |
           set -euo pipefail
           BUILD="$GITHUB_WORKSPACE/survival_prototype/build"
-          APK="$BUILD/Ceniza-Salvaje-compat-debug.apk"
+          APK="$BUILD/Ceniza-Salvaje-compat-arm64-debug.apk"
           SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           BT="$SDK_ROOT/build-tools/35.0.0"
 
-          "$BT/aapt" dump badging "$APK" | tee "$BUILD/aapt-badging-compat.txt"
-          grep -F "package: name='org.cenizasalvaje.prototype.compat'" "$BUILD/aapt-badging-compat.txt"
-          grep -F "sdkVersion:'24'" "$BUILD/aapt-badging-compat.txt"
-          grep -F "targetSdkVersion:'35'" "$BUILD/aapt-badging-compat.txt"
-          grep -F "arm64-v8a" "$BUILD/aapt-badging-compat.txt"
-          grep -F "armeabi-v7a" "$BUILD/aapt-badging-compat.txt"
+          "$BT/aapt" dump badging "$APK" | tee "$BUILD/aapt-badging-compat-arm64.txt"
+          grep -F "package: name='org.cenizasalvaje.prototype.compat64'" "$BUILD/aapt-badging-compat-arm64.txt"
+          grep -F "sdkVersion:'24'" "$BUILD/aapt-badging-compat-arm64.txt"
+          grep -F "targetSdkVersion:'35'" "$BUILD/aapt-badging-compat-arm64.txt"
+          grep -F "native-code: 'arm64-v8a'" "$BUILD/aapt-badging-compat-arm64.txt"
 
-          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-tree-compat.txt"
-          grep -F "android.intent.action.MAIN" "$BUILD/manifest-tree-compat.txt"
-          grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-tree-compat.txt"
+          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-tree-compat-arm64.txt"
+          grep -F "android.intent.action.MAIN" "$BUILD/manifest-tree-compat-arm64.txt"
+          grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-tree-compat-arm64.txt"
 
-          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$BUILD/signature-compat.txt"
-          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$BUILD/signature-compat.txt"
-          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$BUILD/zipalign-compat.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$BUILD/signature-compat-arm64.txt"
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$BUILD/signature-compat-arm64.txt"
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$BUILD/zipalign-compat-arm64.txt"
           unzip -tq "$APK"
 
           mapfile -t ABIS < <(zipinfo -1 "$APK" | awk -F/ '/^lib\/[^/]+\//{print $2}' | sort -u)
-          printf 'ABIS=%s\n' "${ABIS[*]}"
-          [[ " ${ABIS[*]} " == *" arm64-v8a "* ]]
-          [[ " ${ABIS[*]} " == *" armeabi-v7a "* ]]
+          [[ "${#ABIS[@]}" -eq 1 && "${ABIS[0]}" == "arm64-v8a" ]]
 
           cd "$BUILD"
-          sha256sum Ceniza-Salvaje-compat-debug.apk | tee SHA256-COMPAT.txt
-          SIZE="$(stat -c '%s' Ceniza-Salvaje-compat-debug.apk)"
-          SHA="$(awk '{print $1}' SHA256-COMPAT.txt)"
+          sha256sum Ceniza-Salvaje-compat-arm64-debug.apk | tee SHA256-COMPAT-ARM64.txt
+          SIZE="$(stat -c '%s' Ceniza-Salvaje-compat-arm64-debug.apk)"
+          SHA="$(awk '{print $1}' SHA256-COMPAT-ARM64.txt)"
           {
             echo "BUILD_STATUS=PASS"
-            echo "APK=Ceniza-Salvaje-compat-debug.apk"
-            echo "PACKAGE=org.cenizasalvaje.prototype.compat"
+            echo "APK=Ceniza-Salvaje-compat-arm64-debug.apk"
+            echo "PACKAGE=org.cenizasalvaje.prototype.compat64"
             echo "GODOT=4.7.2.stable"
             echo "BUILD_SYSTEM=Gradle"
             echo "MIN_SDK=24"
             echo "TARGET_SDK=35"
-            echo "ABI=armeabi-v7a+arm64-v8a"
+            echo "ABI=arm64-v8a"
             echo "SIZE_BYTES=$SIZE"
             echo "SHA256=$SHA"
             echo "SIGNATURE=debug v2 verified"
             echo "ZIP_INTEGRITY=PASS"
             echo "ZIPALIGN_16K=PASS"
-          } | tee APK_METADATA_COMPAT.txt
+          } | tee APK_METADATA_COMPAT_ARM64.txt
 
-      - name: Upload verified compatibility APK artifact
+      - name: Upload verified ARM64 APK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Ceniza-Salvaje-compat-android-debug
+          name: Ceniza-Salvaje-compat-arm64-android-debug
           path: |
-            survival_prototype/build/Ceniza-Salvaje-compat-debug.apk
-            survival_prototype/build/SHA256-COMPAT.txt
-            survival_prototype/build/APK_METADATA_COMPAT.txt
-            survival_prototype/build/aapt-badging-compat.txt
-            survival_prototype/build/manifest-tree-compat.txt
-            survival_prototype/build/signature-compat.txt
-            survival_prototype/build/zipalign-compat.txt
+            survival_prototype/build/Ceniza-Salvaje-compat-arm64-debug.apk
+            survival_prototype/build/SHA256-COMPAT-ARM64.txt
+            survival_prototype/build/APK_METADATA_COMPAT_ARM64.txt
+            survival_prototype/build/aapt-badging-compat-arm64.txt
+            survival_prototype/build/manifest-tree-compat-arm64.txt
+            survival_prototype/build/signature-compat-arm64.txt
+            survival_prototype/build/zipalign-compat-arm64.txt
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
 
-      - name: Publish compatibility APK as prerelease asset
+      - name: Publish ARM64 compatibility APK as prerelease asset
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ceniza-salvaje-prototype-v0.1.1-compat
+          TAG: ceniza-salvaje-prototype-v0.1.2-compat-arm64
         run: |
           set -euo pipefail
-          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-compat-debug.apk"
+          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-compat-arm64-debug.apk"
           if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
           else
             gh release create "$TAG" "$APK" \
               --repo "${{ github.repository }}" \
               --target "artifact/survival-2d-apk-20260915" \
-              --title "Ceniza Salvaje Prototype v0.1.1 Compat" \
-              --notes "APK de compatibilidad: Gradle, minSdk 24, targetSdk 35, ARM32 + ARM64, paquete alternativo para instalación limpia." \
+              --title "Ceniza Salvaje Prototype v0.1.2 Compat ARM64" \
+              --notes "APK ARM64 de compatibilidad: Godot 4.7.2 + Gradle, minSdk 24, targetSdk 35 y paquete alternativo para instalación limpia." \
               --prerelease
           fi
