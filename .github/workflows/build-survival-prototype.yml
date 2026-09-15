@@ -9,7 +9,8 @@ on:
       - .github/workflows/build-survival-prototype.yml
 
 permissions:
-  contents: read
+  actions: read
+  contents: write
 
 jobs:
   build-android:
@@ -140,8 +141,6 @@ jobs:
           grep -F "native-code: 'arm64-v8a'" "$BUILD/aapt-badging.txt"
           grep -F "android.hardware.screen.landscape" "$BUILD/aapt-badging.txt"
 
-          # Verify the launcher contract from the compiled manifest itself. Some
-          # aapt versions omit the synthetic 'launchable-activity' badging line.
           "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-tree.txt"
           grep -F "android.intent.action.MAIN" "$BUILD/manifest-tree.txt"
           grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-tree.txt"
@@ -190,3 +189,22 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+      - name: Publish APK as prerelease transfer asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ceniza-salvaje-prototype-v0.1.0
+        run: |
+          set -euo pipefail
+          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-survival-debug.apk"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --repo "${{ github.repository }}" --clobber
+          else
+            gh release create "$TAG" "$APK" \
+              --repo "${{ github.repository }}" \
+              --target "artifact/survival-2d-apk-20260915" \
+              --title "Ceniza Salvaje Prototype v0.1.0" \
+              --notes "APK Android arm64-v8a compilado y validado para transferencia a Google Drive." \
+              --prerelease
+          fi
