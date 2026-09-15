@@ -129,20 +129,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="$GITHUB_WORKSPACE/survival_prototype/build/Ceniza-Salvaje-survival-debug.apk"
+          BUILD="$GITHUB_WORKSPACE/survival_prototype/build"
+          APK="$BUILD/Ceniza-Salvaje-survival-debug.apk"
           SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           BT="$SDK_ROOT/build-tools/36.0.0"
-          "$BT/aapt" dump badging "$APK" | tee "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
-          grep -F "package: name='org.cenizasalvaje.prototype'" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
-          grep -F "targetSdkVersion:'36'" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
-          grep -F "launchable-activity:" "$GITHUB_WORKSPACE/survival_prototype/build/aapt-badging.txt"
-          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$GITHUB_WORKSPACE/survival_prototype/build/signature.txt"
-          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$GITHUB_WORKSPACE/survival_prototype/build/zipalign.txt"
+
+          "$BT/aapt" dump badging "$APK" | tee "$BUILD/aapt-badging.txt"
+          grep -F "package: name='org.cenizasalvaje.prototype'" "$BUILD/aapt-badging.txt"
+          grep -F "targetSdkVersion:'36'" "$BUILD/aapt-badging.txt"
+          grep -F "native-code: 'arm64-v8a'" "$BUILD/aapt-badging.txt"
+          grep -F "android.hardware.screen.landscape" "$BUILD/aapt-badging.txt"
+
+          # Verify the launcher contract from the compiled manifest itself. Some
+          # aapt versions omit the synthetic 'launchable-activity' badging line.
+          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee "$BUILD/manifest-tree.txt"
+          grep -F "android.intent.action.MAIN" "$BUILD/manifest-tree.txt"
+          grep -F "android.intent.category.LAUNCHER" "$BUILD/manifest-tree.txt"
+
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$BUILD/signature.txt"
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$BUILD/signature.txt"
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" > "$BUILD/zipalign.txt"
           unzip -tq "$APK"
           mapfile -t ABIS < <(zipinfo -1 "$APK" | awk -F/ '/^lib\/[^/]+\//{print $2}' | sort -u)
           printf 'ABIS=%s\n' "${ABIS[*]}"
           [[ "${#ABIS[@]}" -eq 1 && "${ABIS[0]}" == "arm64-v8a" ]]
-          cd "$GITHUB_WORKSPACE/survival_prototype/build"
+
+          cd "$BUILD"
           sha256sum Ceniza-Salvaje-survival-debug.apk | tee SHA256.txt
           SIZE="$(stat -c '%s' Ceniza-Salvaje-survival-debug.apk)"
           SHA="$(awk '{print $1}' SHA256.txt)"
@@ -151,11 +163,14 @@ jobs:
             echo "APK=Ceniza-Salvaje-survival-debug.apk"
             echo "PACKAGE=org.cenizasalvaje.prototype"
             echo "GODOT=4.7.2.stable"
+            echo "MIN_SDK=24"
             echo "TARGET_SDK=36"
             echo "ABI=arm64-v8a"
+            echo "ORIENTATION=landscape"
+            echo "LAUNCHER_INTENT=MAIN+LAUNCHER verified"
             echo "SIZE_BYTES=$SIZE"
             echo "SHA256=$SHA"
-            echo "SIGNATURE=debug verified"
+            echo "SIGNATURE=debug v2 verified"
             echo "ZIP_INTEGRITY=PASS"
             echo "ZIPALIGN_16K=PASS"
           } | tee APK_METADATA.txt
@@ -169,6 +184,7 @@ jobs:
             survival_prototype/build/SHA256.txt
             survival_prototype/build/APK_METADATA.txt
             survival_prototype/build/aapt-badging.txt
+            survival_prototype/build/manifest-tree.txt
             survival_prototype/build/signature.txt
             survival_prototype/build/zipalign.txt
           if-no-files-found: error
