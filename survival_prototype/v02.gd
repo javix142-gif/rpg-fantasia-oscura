@@ -290,8 +290,8 @@ func _generate_chunk(coord: Vector2i) -> Dictionary:
 		var ep := origin + Vector2(local_rng.randf_range(60.0, CHUNK_SIZE - 60.0), local_rng.randf_range(60.0, CHUNK_SIZE - 60.0))
 		if coord == Vector2i.ZERO and ep.distance_to(Vector2.ZERO) < 260.0:
 			ep += Vector2(280.0, 210.0)
-		var types := ["lobo", "acechador", "saqueador"]
-		var kind := types[local_rng.randi_range(0, types.size() - 1)]
+		var types: Array[String] = ["lobo", "acechador", "saqueador"]
+		var kind: String = String(types[local_rng.randi_range(0, types.size() - 1)])
 		var max_hp := 34.0 if kind == "lobo" else (42.0 if kind == "acechador" else 50.0)
 		enemies.append({"id": i, "chunk": key, "type": kind, "pos": ep, "hp": max_hp, "max_hp": max_hp, "alive": true, "cooldown": 0.0, "hit_flash": 0.0, "knockback": Vector2.ZERO, "phase": local_rng.randf_range(0.0, 10.0)})
 	return {"coord": coord, "resources": resources, "enemies": enemies}
@@ -900,7 +900,7 @@ func _draw_player(p: Vector2) -> void:
 	if hurt_timer > 0.0 and int(anim_clock * 25.0) % 2 == 0:
 		body = Color.WHITE
 	# sombra
-	draw_ellipse(p + Vector2(0, 13), Vector2(11, 4), Color(0.0, 0.0, 0.0, 0.26))
+	_draw_ellipse_px(p + Vector2(0, 13), Vector2(11, 4), Color(0.0, 0.0, 0.0, 0.26))
 	# piernas
 	draw_rect(Rect2(p + Vector2(-6 + step, 6 + bob), Vector2(4, 8)), Color("463a35"))
 	draw_rect(Rect2(p + Vector2(2 - step, 6 + bob), Vector2(4, 8)), Color("463a35"))
@@ -916,7 +916,7 @@ func _draw_player(p: Vector2) -> void:
 	if player_action == "attack": _draw_attack_anim(p + Vector2(0, bob))
 	elif player_action == "harvest": _draw_harvest_anim(p + Vector2(0, bob))
 
-func draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
+func _draw_ellipse_px(center: Vector2, radius: Vector2, color: Color) -> void:
 	var pts := PackedVector2Array()
 	for i in range(16):
 		var a := TAU * float(i) / 16.0
