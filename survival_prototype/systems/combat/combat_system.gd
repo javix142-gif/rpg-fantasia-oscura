@@ -47,11 +47,11 @@ static func update(host: Node, delta: float) -> void:
 
 static func resolve_player_attack(host: Node) -> void:
 	var best: Dictionary = {}
-	var best_dist := 99999.0
-	var cc := host._chunk_coord(host.player_pos)
+	var best_dist: float = 99999.0
+	var cc: Vector2i = host._chunk_coord(host.player_pos)
 	for y in range(cc.y - 1, cc.y + 2):
 		for x in range(cc.x - 1, cc.x + 2):
-			var key := host._chunk_key(Vector2i(x, y))
+			var key: String = host._chunk_key(Vector2i(x, y))
 			if not host.loaded_chunks.has(key):
 				continue
 			var chunk: Dictionary = host.loaded_chunks[key]
@@ -60,18 +60,18 @@ static func resolve_player_attack(host: Node) -> void:
 				if not bool(e.get("alive", true)):
 					continue
 				var ep: Vector2 = e["pos"]
-				var dv := ep - host.player_pos
-				var d := dv.length()
+				var dv: Vector2 = ep - host.player_pos
+				var d: float = dv.length()
 				if d <= host.ATTACK_RANGE and d < best_dist and (d < 0.5 or host.facing.dot(dv.normalized()) >= host.ATTACK_DOT):
 					best = e
 					best_dist = d
 	if best.is_empty():
 		host._spawn_floater(host.CENTER + host.facing * 34.0, "·", Color(0.9, 0.9, 0.8, 0.45))
 		return
-	var damage := 12.0
+	var damage: float = 12.0
 	best["hp"] = float(best["hp"]) - damage
 	best["hit_flash"] = 0.16
-	var dir := host.player_pos.direction_to(best["pos"])
+	var dir: Vector2 = host.player_pos.direction_to(best["pos"])
 	best["knockback"] = dir * 82.0
 	host.screen_shake = 0.08
 	host._spawn_particles(best["pos"], Color("f3d37a"), 9)
