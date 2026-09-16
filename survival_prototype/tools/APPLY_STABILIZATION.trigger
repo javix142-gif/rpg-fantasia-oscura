@@ -1,0 +1,1 @@
+apply stabilization once
