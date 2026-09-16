@@ -28,6 +28,11 @@ jobs:
           set -euo pipefail
           BEFORE=$(wc -l < survival_prototype/v03.gd)
           python3 survival_prototype/tools/apply_stabilization.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('survival_prototype/v03.gd')
+          p.write_text(p.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
           AFTER=$(wc -l < survival_prototype/v03.gd)
           test "$AFTER" -lt "$BEFORE"
           grep -F 'const SaveSystem = preload(' survival_prototype/v03.gd
