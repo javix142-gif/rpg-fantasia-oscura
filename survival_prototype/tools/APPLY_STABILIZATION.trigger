@@ -1,1 +1,1 @@
-apply stabilization once
+apply stabilization retry 2
