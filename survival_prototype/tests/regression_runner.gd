@@ -2,6 +2,7 @@ extends SceneTree
 
 const Runtime = preload("res://v03.gd")
 const SaveSystem = preload("res://systems/persistence/save_system.gd")
+const GameState = preload("res://core/game_state.gd")
 
 var passed: int = 0
 var failed: int = 0
@@ -77,7 +78,12 @@ func _test_different_seed_changes_chunk() -> bool:
 
 func _test_chunk_removed_resource() -> bool:
 	var h: Node = _new_runtime()
-	h.chunk_mods["0,0"] = {"removed_resources": [100], "resource_hp": {}, "killed_enemies": []}
+	var state: Dictionary = _sample_state()
+	state["chunk_mods"] = {"0,0": {"removed_resources": [100], "resource_hp": {}, "killed_enemies": []}}
+	var parsed: Dictionary = SaveSystem.parse_and_validate(JSON.stringify(state))
+	if not bool(parsed.get("ok", false)) or not GameState.apply(h, parsed.get("data", {})):
+		h.free(); return false
+	h._setup_noise()
 	var chunk: Dictionary = h._generate_chunk(Vector2i.ZERO)
 	for r_variant in chunk["resources"]:
 		if int((r_variant as Dictionary)["id"]) == 100:
@@ -98,7 +104,12 @@ func _test_chunk_partial_hp() -> bool:
 func _test_chunk_killed_enemy() -> bool:
 	var h: Node = _new_runtime()
 	var key: String = String(h._chunk_key(Vector2i(2, 2)))
-	h.chunk_mods[key] = {"removed_resources": [], "resource_hp": {}, "killed_enemies": [0]}
+	var state: Dictionary = _sample_state()
+	state["chunk_mods"] = {key: {"removed_resources": [], "resource_hp": {}, "killed_enemies": [0]}}
+	var parsed: Dictionary = SaveSystem.parse_and_validate(JSON.stringify(state))
+	if not bool(parsed.get("ok", false)) or not GameState.apply(h, parsed.get("data", {})):
+		h.free(); return false
+	h._setup_noise()
 	var chunk: Dictionary = h._generate_chunk(Vector2i(2, 2))
 	for e_variant in chunk["enemies"]:
 		if int((e_variant as Dictionary)["id"]) == 0:
