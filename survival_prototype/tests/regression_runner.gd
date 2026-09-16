@@ -3,8 +3,8 @@ extends SceneTree
 const Runtime = preload("res://v03.gd")
 const SaveSystem = preload("res://systems/persistence/save_system.gd")
 
-var passed := 0
-var failed := 0
+var passed: int = 0
+var failed: int = 0
 var failures: Array[String] = []
 
 func _init() -> void:
@@ -29,8 +29,8 @@ func _init() -> void:
 		quit(0)
 
 func _run(name: String, test_callable: Callable) -> void:
-	var ok := false
-	var result = test_callable.call()
+	var ok: bool = false
+	var result: Variant = test_callable.call()
 	if result is bool:
 		ok = result
 	if ok:
@@ -42,7 +42,7 @@ func _run(name: String, test_callable: Callable) -> void:
 		print("FAIL ", name)
 
 func _new_runtime(seed: int = 424242) -> Node:
-	var host = Runtime.new()
+	var host: Node = Runtime.new()
 	host.world_seed = seed
 	host._setup_noise()
 	return host
@@ -60,23 +60,23 @@ func _chunk_signature(chunk: Dictionary) -> String:
 	return "|".join(parts)
 
 func _test_deterministic_same_seed_chunk() -> bool:
-	var a := _new_runtime(424242)
-	var b := _new_runtime(424242)
-	var sa := _chunk_signature(a._generate_chunk(Vector2i(3, -2)))
-	var sb := _chunk_signature(b._generate_chunk(Vector2i(3, -2)))
+	var a: Node = _new_runtime(424242)
+	var b: Node = _new_runtime(424242)
+	var sa: String = _chunk_signature(a._generate_chunk(Vector2i(3, -2)))
+	var sb: String = _chunk_signature(b._generate_chunk(Vector2i(3, -2)))
 	a.free(); b.free()
 	return sa == sb and not sa.is_empty()
 
 func _test_different_seed_changes_chunk() -> bool:
-	var a := _new_runtime(424242)
-	var b := _new_runtime(424243)
-	var sa := _chunk_signature(a._generate_chunk(Vector2i(3, -2)))
-	var sb := _chunk_signature(b._generate_chunk(Vector2i(3, -2)))
+	var a: Node = _new_runtime(424242)
+	var b: Node = _new_runtime(424243)
+	var sa: String = _chunk_signature(a._generate_chunk(Vector2i(3, -2)))
+	var sb: String = _chunk_signature(b._generate_chunk(Vector2i(3, -2)))
 	a.free(); b.free()
 	return sa != sb
 
 func _test_chunk_removed_resource() -> bool:
-	var h := _new_runtime()
+	var h: Node = _new_runtime()
 	h.chunk_mods["0,0"] = {"removed_resources": [100], "resource_hp": {}, "killed_enemies": []}
 	var chunk: Dictionary = h._generate_chunk(Vector2i.ZERO)
 	for r_variant in chunk["resources"]:
@@ -85,19 +85,19 @@ func _test_chunk_removed_resource() -> bool:
 	h.free(); return true
 
 func _test_chunk_partial_hp() -> bool:
-	var h := _new_runtime()
+	var h: Node = _new_runtime()
 	h.chunk_mods["0,0"] = {"removed_resources": [], "resource_hp": {"140": 2.0}, "killed_enemies": []}
 	var chunk: Dictionary = h._generate_chunk(Vector2i.ZERO)
 	for r_variant in chunk["resources"]:
 		var r: Dictionary = r_variant
 		if int(r["id"]) == 140:
-			var ok := is_equal_approx(float(r["hp"]), 2.0)
+			var ok: bool = is_equal_approx(float(r["hp"]), 2.0)
 			h.free(); return ok
 	h.free(); return false
 
 func _test_chunk_killed_enemy() -> bool:
-	var h := _new_runtime()
-	var key := h._chunk_key(Vector2i(2, 2))
+	var h: Node = _new_runtime()
+	var key: String = String(h._chunk_key(Vector2i(2, 2)))
 	h.chunk_mods[key] = {"removed_resources": [], "resource_hp": {}, "killed_enemies": [0]}
 	var chunk: Dictionary = h._generate_chunk(Vector2i(2, 2))
 	for e_variant in chunk["enemies"]:
@@ -106,12 +106,12 @@ func _test_chunk_killed_enemy() -> bool:
 	h.free(); return true
 
 func _test_crafting_costs() -> bool:
-	var h := _new_runtime()
+	var h: Node = _new_runtime()
 	h.inventory = {"madera": 4, "piedra": 3, "fibra": 3, "comida": 0, "mineral": 0, "venda": 0}
 	var axe_cost: Dictionary = h.CRAFT_RECIPES["hacha"]["cost"]
 	if not h._can_pay(axe_cost): h.free(); return false
 	h._pay(axe_cost)
-	var ok := int(h.inventory["madera"]) == 0 and int(h.inventory["piedra"]) == 0
+	var ok: bool = int(h.inventory["madera"]) == 0 and int(h.inventory["piedra"]) == 0
 	h.free(); return ok
 
 func _sample_state(seed: int = 424242) -> Dictionary:
@@ -129,62 +129,63 @@ func _paths(prefix: String) -> Dictionary:
 	return {"p": "user://%s.json" % prefix, "b": "user://%s.bak" % prefix, "t": "user://%s.tmp" % prefix}
 
 func _cleanup(paths: Dictionary) -> void:
-	for path in paths.values():
+	for path_variant in paths.values():
+		var path: String = String(path_variant)
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 func _write_text(path: String, text: String) -> void:
-	var f := FileAccess.open(path, FileAccess.WRITE)
+	var f: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(text); f.close()
 
 func _test_save_roundtrip() -> bool:
-	var p := _paths("cs_test_roundtrip"); _cleanup(p)
-	var state := _sample_state()
-	var wr := SaveSystem.save_state(state, p.p, p.b, p.t)
-	var rd := SaveSystem.load_state(p.p, p.b)
-	var ok := bool(wr.get("ok", false)) and bool(rd.get("ok", false)) and int((rd.data as Dictionary)["seed"]) == 424242 and (rd.data as Dictionary)["inventory"] == state["inventory"]
+	var p: Dictionary = _paths("cs_test_roundtrip"); _cleanup(p)
+	var state: Dictionary = _sample_state()
+	var wr: Dictionary = SaveSystem.save_state(state, p.p, p.b, p.t)
+	var rd: Dictionary = SaveSystem.load_state(p.p, p.b)
+	var ok: bool = bool(wr.get("ok", false)) and bool(rd.get("ok", false)) and int((rd.data as Dictionary)["seed"]) == 424242 and (rd.data as Dictionary)["inventory"] == state["inventory"]
 	_cleanup(p); return ok
 
 func _test_corrupt_primary_preserved() -> bool:
-	var p := _paths("cs_test_corrupt"); _cleanup(p)
-	var corrupt := "{broken-json:"
+	var p: Dictionary = _paths("cs_test_corrupt"); _cleanup(p)
+	var corrupt: String = "{broken-json:"
 	_write_text(p.p, corrupt)
-	var wr := SaveSystem.save_state(_sample_state(), p.p, p.b, p.t)
-	var still := FileAccess.get_file_as_string(p.p)
-	var ok := not bool(wr.get("ok", false)) and String(wr.get("error", "")) == "primary_invalid_preserved" and still == corrupt
+	var wr: Dictionary = SaveSystem.save_state(_sample_state(), p.p, p.b, p.t)
+	var still: String = FileAccess.get_file_as_string(p.p)
+	var ok: bool = not bool(wr.get("ok", false)) and String(wr.get("error", "")) == "primary_invalid_preserved" and still == corrupt
 	_cleanup(p); return ok
 
 func _test_backup_fallback() -> bool:
-	var p := _paths("cs_test_backup"); _cleanup(p)
-	var first := _sample_state(111111)
-	var second := _sample_state(222222)
+	var p: Dictionary = _paths("cs_test_backup"); _cleanup(p)
+	var first: Dictionary = _sample_state(111111)
+	var second: Dictionary = _sample_state(222222)
 	if not bool(SaveSystem.save_state(first, p.p, p.b, p.t).get("ok", false)): _cleanup(p); return false
 	if not bool(SaveSystem.save_state(second, p.p, p.b, p.t).get("ok", false)): _cleanup(p); return false
 	_write_text(p.p, "corrupt")
-	var rd := SaveSystem.load_state(p.p, p.b)
-	var ok := bool(rd.get("ok", false)) and String(rd.get("source", "")) == "backup" and int((rd.data as Dictionary)["seed"]) == 111111
+	var rd: Dictionary = SaveSystem.load_state(p.p, p.b)
+	var ok: bool = bool(rd.get("ok", false)) and String(rd.get("source", "")) == "backup" and int((rd.data as Dictionary)["seed"]) == 111111
 	_cleanup(p); return ok
 
 func _test_building_roundtrip() -> bool:
-	var p := _paths("cs_test_building"); _cleanup(p)
-	var state := _sample_state()
+	var p: Dictionary = _paths("cs_test_building"); _cleanup(p)
+	var state: Dictionary = _sample_state()
 	SaveSystem.save_state(state, p.p, p.b, p.t)
-	var rd := SaveSystem.load_state(p.p, p.b)
+	var rd: Dictionary = SaveSystem.load_state(p.p, p.b)
 	var buildings: Array = (rd.data as Dictionary)["buildings"]
 	var b: Dictionary = buildings[0]
-	var ok := String(b["type"]) == "cofre" and int(b["rot"]) == 1 and b["pos"] == [32.0, 48.0]
+	var ok: bool = String(b["type"]) == "cofre" and int(b["rot"]) == 1 and b["pos"] == [32.0, 48.0]
 	_cleanup(p); return ok
 
 func _test_chest_roundtrip() -> bool:
-	var p := _paths("cs_test_chest"); _cleanup(p)
+	var p: Dictionary = _paths("cs_test_chest"); _cleanup(p)
 	SaveSystem.save_state(_sample_state(), p.p, p.b, p.t)
-	var rd := SaveSystem.load_state(p.p, p.b)
+	var rd: Dictionary = SaveSystem.load_state(p.p, p.b)
 	var chest: Dictionary = ((rd.data as Dictionary)["buildings"] as Array)[0]["chest"]
-	var ok := int(chest["madera"]) == 5 and int(chest["piedra"]) == 2 and int(chest["comida"]) == 1
+	var ok: bool = int(chest["madera"]) == 5 and int(chest["piedra"]) == 2 and int(chest["comida"]) == 1
 	_cleanup(p); return ok
 
 func _test_v3_migration() -> bool:
-	var legacy := _sample_state()
+	var legacy: Dictionary = _sample_state()
 	legacy["version"] = 3
-	var parsed := SaveSystem.parse_and_validate(JSON.stringify(legacy))
+	var parsed: Dictionary = SaveSystem.parse_and_validate(JSON.stringify(legacy))
 	return bool(parsed.get("ok", false)) and int((parsed.data as Dictionary)["version"]) == 4
