@@ -1,8 +1,22 @@
 extends Node2D
 
-# Ceniza Salvaje v0.3 — Core Survival Pass
-# Objetivo: game feel, restricciones, economia, inventario/equipamiento,
-# construccion movil, cofres, colisiones, zona segura, mapa y onboarding.
+const SaveSystem = preload("res://systems/persistence/save_system.gd")
+const GameState = preload("res://core/game_state.gd")
+const WorldGenerator = preload("res://world/world_generator.gd")
+const SpatialIndex = preload("res://world/spatial_index.gd")
+const InventorySystem = preload("res://systems/inventory/inventory_system.gd")
+const InteractionSystem = preload("res://systems/interaction/interaction_system.gd")
+const CombatSystem = preload("res://systems/combat/combat_system.gd")
+const EnemySystem = preload("res://systems/enemies/enemy_system.gd")
+const HarvestSystem = preload("res://systems/interaction/harvest_system.gd")
+const BuildingSystem = preload("res://systems/building/building_system.gd")
+const InputActions = preload("res://systems/input/input_actions.gd")
+const DayWeatherSystem = preload("res://systems/environment/day_weather_system.gd")
+const WorldRenderer = preload("res://ui/world_renderer.gd")
+
+
+# Ceniza Salvaje v0.3 — Runtime Orchestrator estabilizado
+# Coordina sistemas modulares; conserva dibujo procedural y UI del vertical slice.
 
 const SCREEN := Vector2(640.0, 360.0)
 const CENTER := Vector2(320.0, 180.0)
@@ -133,19 +147,43 @@ var sound_players: Array[AudioStreamPlayer] = []
 var sounds: Dictionary = {}
 var sound_cursor := 0
 
+var spatial_index: RefCounted = SpatialIndex.new()
+var save_dirty := false
+var save_blocked := false
+var save_block_reason := ""
+var last_dirty_reason := ""
+const DEBUG_ALLOW_NEW_WORLD_SHORTCUT := false
+
 func _ready() -> void:
 	get_viewport().set_embedding_subwindows(false)
+	InputActions.ensure_actions()
 	_setup_audio()
-	if FileAccess.file_exists(SAVE_PATH) and _load_game():
+	var load_result: Dictionary = SaveSystem.load_state()
+	if bool(load_result.get("ok", false)) and GameState.apply(self, load_result.get("data", {})):
 		_setup_noise()
 		_refresh_chunks(true)
-		_set_major("Partida v0.3 cargada", 1.5)
+		save_dirty = false
+		var source := String(load_result.get("source", "primary"))
+		if source == "backup" and FileAccess.file_exists(SaveSystem.PRIMARY_PATH):
+			save_blocked = true
+			save_block_reason = "primary_invalid_backup_loaded"
+			_set_major("Backup cargado. Save primario inválido protegido.", 3.2)
+		elif source == "backup":
+			_set_major("Backup recuperado", 2.0)
+		else:
+			_set_major("Partida v0.3 cargada", 1.5)
+	elif String(load_result.get("error", "")) == "save_missing":
+		_new_world(true)
 	else:
-		_new_world()
+		# Nunca sobrescribir automáticamente un save que existe pero no valida.
+		save_blocked = true
+		save_block_reason = String(load_result.get("error", "invalid_save"))
+		_new_world(false)
+		_set_major("SAVE INVÁLIDO PROTEGIDO · sesión sin guardado", 4.0)
 	set_process(true)
 	queue_redraw()
 
-func _new_world() -> void:
+func _new_world(persist_initial: bool = true) -> void:
 	world_seed = absi(int(Time.get_unix_time_from_system() * 1000.0)) % 2147480000
 	if world_seed == 0:
 		world_seed = 314159
@@ -166,6 +204,7 @@ func _new_world() -> void:
 	chunk_mods.clear()
 	explored_chunks.clear()
 	buildings.clear()
+	spatial_index.rebuild(buildings)
 	loaded_chunks.clear()
 	current_chunk = Vector2i(999999, 999999)
 	tutorial_step = 0
@@ -177,18 +216,15 @@ func _new_world() -> void:
 	tutorial_crafted_axe = false
 	_setup_noise()
 	_refresh_chunks(true)
+	_mark_dirty("new_world")
 	_set_major("Un claro seguro. Reune recursos antes de salir.", 3.0)
-	_save_game()
+	if persist_initial and not save_blocked:
+		_save_game(true)
 
 func _setup_noise() -> void:
-	biome_noise = FastNoiseLite.new()
-	biome_noise.seed = world_seed
-	biome_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-	biome_noise.frequency = 0.00135
-	detail_noise = FastNoiseLite.new()
-	detail_noise.seed = world_seed ^ 0x5A17C9
-	detail_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	detail_noise.frequency = 0.015
+	var noise: Dictionary = WorldGenerator.setup_noise(world_seed)
+	biome_noise = noise["biome"]
+	detail_noise = noise["detail"]
 	rng.seed = world_seed
 
 func _process(delta: float) -> void:
@@ -209,24 +245,14 @@ func _process(delta: float) -> void:
 	_update_tutorial()
 	_update_context_hint()
 	if weather_timer <= 0.0:
-		weather_timer = 55.0 + rng.randf_range(-10.0, 18.0)
-		weather = WEATHER[rng.randi_range(0, WEATHER.size() - 1)]
-		_set_major("Cambia el tiempo: %s" % weather, 1.7)
-		_play_sound("weather")
+		DayWeatherSystem.change_weather(self)
 	if save_timer <= 0.0:
 		save_timer = 12.0
-		_save_game()
+		_save_game(false)
 	queue_redraw()
 
 func _update_time(delta: float) -> void:
-	var old_clock := day_clock
-	day_clock += delta / 230.0
-	if day_clock >= 1.0:
-		day_clock -= 1.0
-		day_number += 1
-		_set_major("Día %d" % day_number, 1.6)
-	if old_clock < 0.74 and day_clock >= 0.74:
-		_set_major("Cae la noche", 1.6)
+	DayWeatherSystem.update_time(self, delta)
 
 func _action_move_multiplier() -> float:
 	if hurt_stagger > 0.0:
@@ -244,11 +270,7 @@ func _update_movement(delta: float) -> void:
 		joystick_vec = Vector2.ZERO
 		_regen_stamina(delta, 8.0)
 		return
-	var move := Vector2.ZERO
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): move.x -= 1.0
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): move.x += 1.0
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): move.y -= 1.0
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): move.y += 1.0
+	var move: Vector2 = InputActions.movement_vector()
 	if joystick_vec.length() > 0.08:
 		move = joystick_vec
 	if move.length() > 1.0:
@@ -258,7 +280,7 @@ func _update_movement(delta: float) -> void:
 	if is_moving and multiplier > 0.0:
 		if combat_state == "idle" and harvest_timer <= 0.0:
 			facing = _cardinal(move)
-		var wants_sprint := (joystick_vec.length() > 0.88 or Input.is_key_pressed(KEY_SHIFT)) and multiplier >= 0.99
+		var wants_sprint := (joystick_vec.length() > 0.88 or InputActions.sprint_pressed()) and multiplier >= 0.99
 		is_sprinting = wants_sprint and stamina > 2.0
 		var speed := SPRINT_SPEED if is_sprinting else WALK_SPEED
 		if is_sprinting:
@@ -266,8 +288,11 @@ func _update_movement(delta: float) -> void:
 			stamina_regen_lock = STAMINA_REGEN_DELAY
 		else:
 			_regen_stamina(delta, 9.0)
+		var before := player_pos
 		var delta_move := move * speed * multiplier * delta
 		player_pos = _move_with_world_collisions(player_pos, delta_move, PLAYER_RADIUS)
+		if player_pos.distance_squared_to(before) > 0.0001:
+			_mark_dirty("player_position")
 	else:
 		is_sprinting = false
 		_regen_stamina(delta, 12.0)
@@ -285,17 +310,7 @@ func _cardinal(v: Vector2) -> Vector2:
 	return Vector2.DOWN if v.y > 0.0 else Vector2.UP
 
 func _update_survival(delta: float) -> void:
-	hunger = maxf(0.0, hunger - delta * 0.18)
-	if hunger <= 0.0:
-		hp -= delta * 1.6
-	for b_variant in buildings:
-		var b: Dictionary = b_variant
-		if String(b.get("type", "")) == "fogata":
-			var bp: Vector2 = b["pos"]
-			if bp.distance_to(player_pos) < 76.0 and (day_clock > 0.72 or day_clock < 0.18):
-				hp = minf(100.0, hp + delta * 0.5)
-	if hp <= 0.0:
-		_respawn()
+	DayWeatherSystem.update_survival(self, delta)
 
 func _respawn() -> void:
 	hp = 65.0
@@ -308,6 +323,7 @@ func _respawn() -> void:
 	loaded_chunks.clear()
 	current_chunk = Vector2i(999999, 999999)
 	_refresh_chunks(true)
+	_mark_dirty("respawn")
 	_set_major("Has caído. Regresas al claro.", 2.6)
 	_play_sound("hurt")
 
@@ -317,7 +333,9 @@ func _refresh_chunks(force: bool) -> void:
 		return
 	current_chunk = cc
 	var current_key := _chunk_key(cc)
-	explored_chunks[current_key] = true
+	if not explored_chunks.has(current_key):
+		explored_chunks[current_key] = true
+		_mark_dirty("exploration")
 	var wanted: Dictionary = {}
 	for y in range(cc.y - ACTIVE_RADIUS, cc.y + ACTIVE_RADIUS + 1):
 		for x in range(cc.x - ACTIVE_RADIUS, cc.x + ACTIVE_RADIUS + 1):
@@ -333,85 +351,19 @@ func _refresh_chunks(force: bool) -> void:
 			loaded_chunks.erase(key)
 
 func _chunk_coord(pos: Vector2) -> Vector2i:
-	return Vector2i(int(floor(pos.x / CHUNK_SIZE)), int(floor(pos.y / CHUNK_SIZE)))
+	return WorldGenerator.chunk_coord(pos)
 
 func _chunk_key(coord: Vector2i) -> String:
-	return "%d,%d" % [coord.x, coord.y]
+	return WorldGenerator.chunk_key(coord)
 
 func _parse_chunk_key(key: String) -> Vector2i:
-	var parts := key.split(",")
-	if parts.size() != 2:
-		return Vector2i.ZERO
-	return Vector2i(int(parts[0]), int(parts[1]))
+	return WorldGenerator.parse_chunk_key(key)
 
 func _chunk_seed(coord: Vector2i) -> int:
-	var s := world_seed ^ (coord.x * 73856093) ^ (coord.y * 19349663)
-	return absi(s) % 2147480000
+	return WorldGenerator.chunk_seed(world_seed, coord)
 
 func _generate_chunk(coord: Vector2i) -> Dictionary:
-	var local_rng := RandomNumberGenerator.new()
-	local_rng.seed = _chunk_seed(coord)
-	var key := _chunk_key(coord)
-	var mod := _chunk_state(key)
-	var removed: Array = mod["removed_resources"]
-	var hp_state: Dictionary = mod["resource_hp"]
-	var killed: Array = mod["killed_enemies"]
-	var resources: Array = []
-	var enemies: Array = []
-	var origin := Vector2(float(coord.x) * CHUNK_SIZE, float(coord.y) * CHUNK_SIZE)
-
-	# Menos densidad que v0.2: 8-12 nodos por chunk, con recursos ligeros frecuentes.
-	var count := 8 + local_rng.randi_range(0, 4)
-	for i in range(count):
-		if i in removed:
-			continue
-		var pos := origin + Vector2(local_rng.randf_range(24.0, CHUNK_SIZE - 24.0), local_rng.randf_range(24.0, CHUNK_SIZE - 24.0))
-		var kind := _resource_kind(_biome_at(pos), local_rng.randf(), pos.length() < SAFE_RADIUS)
-		var max_hp := _resource_max_hp(kind)
-		var saved_hp := float(hp_state.get(str(i), max_hp))
-		resources.append({"id": i, "chunk": key, "type": kind, "pos": pos, "hp": saved_hp, "max_hp": max_hp, "shake": 0.0})
-
-	# Kit inicial determinista dentro del claro: suficientes recursos manuales para las primeras herramientas.
-	if coord == Vector2i.ZERO:
-		var forced := [
-			[100, "rama", Vector2(58, 20)], [101, "rama", Vector2(-62, 26)], [102, "rama", Vector2(92, -42)], [103, "rama", Vector2(-106, 38)],
-			[104, "rama", Vector2(132, 72)], [105, "rama", Vector2(-138, -64)], [106, "rama", Vector2(36, 112)], [107, "rama", Vector2(-40, -116)],
-			[110, "piedra_suelta", Vector2(42, -58)], [111, "piedra_suelta", Vector2(-46, -62)], [112, "piedra_suelta", Vector2(82, 54)], [113, "piedra_suelta", Vector2(-88, 70)],
-			[114, "piedra_suelta", Vector2(122, -90)], [115, "piedra_suelta", Vector2(-126, 92)], [116, "piedra_suelta", Vector2(164, 18)], [117, "piedra_suelta", Vector2(-170, -20)],
-			[120, "fibra", Vector2(70, -22)], [121, "fibra", Vector2(-72, 48)], [122, "fibra", Vector2(16, 142)], [123, "fibra", Vector2(-18, -148)],
-			[130, "baya", Vector2(28, 82)], [131, "baya", Vector2(-94, -12)], [132, "baya", Vector2(146, -20)],
-			[140, "arbol", Vector2(-205, 30)], [141, "arbol", Vector2(208, -72)], [142, "roca", Vector2(190, 118)]
-		]
-		for item in forced:
-			var fid := int(item[0])
-			if fid in removed:
-				continue
-			var kind := String(item[1])
-			var max_hp := _resource_max_hp(kind)
-			resources.append({"id": fid, "chunk": key, "type": kind, "pos": item[2], "hp": float(hp_state.get(str(fid), max_hp)), "max_hp": max_hp, "shake": 0.0})
-
-	# Progresión de amenaza: nunca spawnea dentro del radio seguro. Más lejos puede haber 1-2 enemigos.
-	var chunk_center := origin + Vector2(CHUNK_SIZE * 0.5, CHUNK_SIZE * 0.5)
-	var distance_band := chunk_center.length()
-	var enemy_count := 1
-	if distance_band > 1500.0 and local_rng.randf() < 0.45:
-		enemy_count = 2
-	for i in range(enemy_count):
-		if i in killed:
-			continue
-		var ep := origin + Vector2(local_rng.randf_range(54.0, CHUNK_SIZE - 54.0), local_rng.randf_range(54.0, CHUNK_SIZE - 54.0))
-		if ep.length() < SAFE_RADIUS + 70.0:
-			continue
-		var types: Array[String] = ["lobo", "acechador", "saqueador"]
-		var kind: String = String(types[local_rng.randi_range(0, types.size() - 1)])
-		var max_hp := 34.0 if kind == "lobo" else (42.0 if kind == "acechador" else 58.0)
-		enemies.append({
-			"id": i, "chunk": key, "type": kind, "pos": ep, "home": ep, "hp": max_hp, "max_hp": max_hp,
-			"alive": true, "state": "idle", "state_timer": local_rng.randf_range(0.3, 1.2), "hit_flash": 0.0,
-			"knockback": Vector2.ZERO, "phase": local_rng.randf_range(0.0, 10.0), "attack_dir": Vector2.ZERO,
-			"has_hit": false, "alerted": false
-		})
-	return {"coord": coord, "resources": resources, "enemies": enemies}
+	return WorldGenerator.generate_chunk(world_seed, coord, _chunk_state(_chunk_key(coord)), biome_noise)
 
 func _chunk_state(key: String) -> Dictionary:
 	if not chunk_mods.has(key):
@@ -419,76 +371,20 @@ func _chunk_state(key: String) -> Dictionary:
 	return chunk_mods[key]
 
 func _resource_kind(biome: String, roll: float, safe: bool) -> String:
-	if safe:
-		if roll < 0.30: return "rama"
-		if roll < 0.52: return "piedra_suelta"
-		if roll < 0.72: return "fibra"
-		if roll < 0.86: return "baya"
-		return "arbol"
-	if biome == "bosque":
-		if roll < 0.31: return "arbol"
-		if roll < 0.47: return "rama"
-		if roll < 0.62: return "fibra"
-		if roll < 0.74: return "baya"
-		if roll < 0.89: return "roca"
-		return "piedra_suelta"
-	if biome == "pradera":
-		if roll < 0.23: return "fibra"
-		if roll < 0.39: return "baya"
-		if roll < 0.55: return "piedra_suelta"
-		if roll < 0.69: return "rama"
-		if roll < 0.84: return "roca"
-		return "arbol"
-	if roll < 0.25: return "roca"
-	if roll < 0.42: return "mineral"
-	if roll < 0.62: return "piedra_suelta"
-	if roll < 0.82: return "rama"
-	return "fibra"
+	return WorldGenerator.resource_kind(biome, roll, safe)
 
 func _resource_max_hp(kind: String) -> float:
-	match kind:
-		"arbol": return 4.0
-		"roca": return 4.0
-		"mineral": return 5.0
-		_: return 1.0
+	return WorldGenerator.resource_max_hp(kind)
 
 func _biome_value(pos: Vector2) -> float:
-	# El claro inicial se mantiene pradera para legibilidad y onboarding.
-	if pos.length() < SAFE_RADIUS * 0.88:
-		return 0.0
-	return biome_noise.get_noise_2d(pos.x, pos.y)
+	return WorldGenerator.biome_value(pos, biome_noise)
 
 func _biome_at(pos: Vector2) -> String:
-	var n := _biome_value(pos)
-	if n < -0.22: return "cenizal"
-	if n < 0.27: return "pradera"
-	return "bosque"
+	return WorldGenerator.biome_at(pos, biome_noise)
 
 func _terrain_color(pos: Vector2) -> Color:
-	var n := _biome_value(pos)
-	var ash := Color("665f61")
-	var meadow := Color("687b50")
-	var forest := Color("345d4d")
-	var c := ash
-	if n < -0.30:
-		c = ash
-	elif n < -0.12:
-		c = ash.lerp(meadow, smoothstep(-0.30, -0.12, n))
-	elif n < 0.19:
-		c = meadow
-	elif n < 0.36:
-		c = meadow.lerp(forest, smoothstep(0.19, 0.36, n))
-	else:
-		c = forest
-	# Variación reducida para que el suelo no parezca una cuadrícula de bloques.
-	var d := detail_noise.get_noise_2d(pos.x, pos.y) * 0.026
-	if pos.length() < SAFE_RADIUS * 0.72:
-		c = c.lerp(Color("728455"), 0.28)
-	return Color(clampf(c.r + d, 0.0, 1.0), clampf(c.g + d, 0.0, 1.0), clampf(c.b + d, 0.0, 1.0), 1.0)
+	return WorldGenerator.terrain_color(pos, biome_noise, detail_noise)
 
-# -----------------------------------------------------------------------------
-# Colisiones simples y baratas: jugador/enemigos contra recursos sólidos y edificios.
-# -----------------------------------------------------------------------------
 func _move_with_world_collisions(from: Vector2, delta_move: Vector2, radius: float) -> Vector2:
 	var p := from
 	var test_x := Vector2(p.x + delta_move.x, p.y)
@@ -500,15 +396,19 @@ func _move_with_world_collisions(from: Vector2, delta_move: Vector2, radius: flo
 	return p
 
 func _position_blocked(pos: Vector2, radius: float) -> bool:
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for r_variant in chunk["resources"]:
-			var r: Dictionary = r_variant
-			var kind := String(r["type"])
-			var rr := _resource_collision_radius(kind)
-			if rr > 0.0 and (r["pos"] as Vector2).distance_to(pos) < rr + radius:
-				return true
-	for b_variant in buildings:
+	var cc := _chunk_coord(pos)
+	for y in range(cc.y - 1, cc.y + 2):
+		for x in range(cc.x - 1, cc.x + 2):
+			var key := _chunk_key(Vector2i(x, y))
+			if not loaded_chunks.has(key):
+				continue
+			var chunk: Dictionary = loaded_chunks[key]
+			for r_variant in chunk["resources"]:
+				var r: Dictionary = r_variant
+				var rr := _resource_collision_radius(String(r["type"]))
+				if rr > 0.0 and (r["pos"] as Vector2).distance_squared_to(pos) < (rr + radius) * (rr + radius):
+					return true
+	for b_variant in spatial_index.nearby_buildings(buildings, pos, 72.0):
 		var b: Dictionary = b_variant
 		if _building_blocks_circle(b, pos, radius):
 			return true
@@ -542,492 +442,63 @@ func _circle_rect_overlap(center: Vector2, radius: float, rect: Rect2) -> bool:
 # Combate del jugador: wind-up -> activo -> recovery, stamina, buffer único.
 # -----------------------------------------------------------------------------
 func _request_attack() -> void:
-	if menu_mode != "" or placement_type != "" or harvest_timer > 0.0 or hurt_stagger > 0.0:
-		return
-	if combat_state != "idle":
-		attack_buffered = true
-		return
-	_start_attack()
+	CombatSystem.request_attack(self)
 
 func _start_attack() -> void:
-	if stamina < ATTACK_COST:
-		_spawn_floater(CENTER + Vector2(0, -28), "SIN ENERGÍA", Color("7dcce5"))
-		_play_sound("error")
-		return
-	stamina = maxf(0.0, stamina - ATTACK_COST)
-	stamina_regen_lock = STAMINA_REGEN_DELAY
-	combat_state = "windup"
-	combat_timer = ATTACK_WINDUP
-	attack_hit_done = false
-	_play_sound("attack")
+	CombatSystem.start_attack(self)
 
 func _update_combat(delta: float) -> void:
-	if combat_state == "idle":
-		return
-	combat_timer -= delta
-	if combat_timer > 0.0:
-		return
-	match combat_state:
-		"windup":
-			combat_state = "active"
-			combat_timer = ATTACK_ACTIVE
-			if not attack_hit_done:
-				attack_hit_done = true
-				_resolve_player_attack()
-		"active":
-			combat_state = "recovery"
-			combat_timer = ATTACK_RECOVERY
-		"recovery":
-			combat_state = "idle"
-			combat_timer = 0.0
-			if attack_buffered:
-				attack_buffered = false
-				_start_attack()
+	CombatSystem.update(self, delta)
 
 func _resolve_player_attack() -> void:
-	var best: Dictionary = {}
-	var best_dist := 99999.0
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for e_variant in chunk["enemies"]:
-			var e: Dictionary = e_variant
-			if not bool(e.get("alive", true)):
-				continue
-			var ep: Vector2 = e["pos"]
-			var dv := ep - player_pos
-			var d := dv.length()
-			if d <= ATTACK_RANGE and d < best_dist and (d < 0.5 or facing.dot(dv.normalized()) >= ATTACK_DOT):
-				best = e
-				best_dist = d
-	if best.is_empty():
-		_spawn_floater(CENTER + facing * 34.0, "·", Color(0.9, 0.9, 0.8, 0.45))
-		return
-	var damage := 12.0
-	best["hp"] = float(best["hp"]) - damage
-	best["hit_flash"] = 0.16
-	var dir := player_pos.direction_to(best["pos"])
-	best["knockback"] = dir * 82.0
-	screen_shake = 0.08
-	_spawn_particles(best["pos"], Color("f3d37a"), 9)
-	_spawn_floater(_world_to_screen(best["pos"]) + Vector2(0, -18), "-%d" % int(damage), Color("ffd76a"))
-	_play_sound("hit")
-	if float(best["hp"]) <= 0.0:
-		_kill_enemy(best)
+	CombatSystem.resolve_player_attack(self)
 
-# -----------------------------------------------------------------------------
-# IA: tres patrones distintos con telegraph/recovery e histéresis.
-# -----------------------------------------------------------------------------
 func _update_enemies(delta: float) -> void:
-	var night_bonus := 1.12 if (day_clock > 0.72 or day_clock < 0.18) else 1.0
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		var enemies: Array = chunk["enemies"]
-		for e_variant in enemies:
-			var e: Dictionary = e_variant
-			if not bool(e.get("alive", true)):
-				continue
-			e["hit_flash"] = maxf(0.0, float(e["hit_flash"]) - delta)
-			var kb: Vector2 = e["knockback"]
-			if kb.length() > 1.0:
-				e["pos"] = _move_with_world_collisions(e["pos"], kb * delta, 8.0)
-				e["knockback"] = kb.move_toward(Vector2.ZERO, 260.0 * delta)
-			# El claro es un refugio real: enemigos no lo invaden.
-			if player_pos.length() < SAFE_RADIUS and (e["pos"] as Vector2).length() > SAFE_RADIUS:
-				_enemy_return_home(e, delta, night_bonus)
-				continue
-			match String(e["type"]):
-				"lobo": _update_wolf(e, enemies, delta, night_bonus)
-				"acechador": _update_stalker(e, enemies, delta, night_bonus)
-				_: _update_raider(e, enemies, delta, night_bonus)
+	EnemySystem.update(self, delta)
 
-func _enemy_return_home(e: Dictionary, delta: float, speed_mul: float) -> void:
-	e["state"] = "return"
-	var ep: Vector2 = e["pos"]
-	var home: Vector2 = e["home"]
-	if ep.distance_to(home) < 12.0:
-		e["state"] = "idle"
-		return
-	var dir := ep.direction_to(home)
-	e["pos"] = _enemy_move(e, dir * 48.0 * speed_mul * delta, 8.0, [])
 
-func _enemy_common_awareness(e: Dictionary, aggro: float, deaggro: float) -> bool:
-	var ep: Vector2 = e["pos"]
-	var d := ep.distance_to(player_pos)
-	var alerted := bool(e.get("alerted", false))
-	if not alerted and d <= aggro:
-		e["alerted"] = true
-		return true
-	if alerted and d >= deaggro:
-		e["alerted"] = false
-		e["state"] = "return"
-		return false
-	return alerted
 
-func _enemy_move(e: Dictionary, delta_move: Vector2, radius: float, peers: Array) -> Vector2:
-	var sep := Vector2.ZERO
-	var ep: Vector2 = e["pos"]
-	for other_variant in peers:
-		var other: Dictionary = other_variant
-		if other == e or not bool(other.get("alive", true)):
-			continue
-		var op: Vector2 = other["pos"]
-		var d := ep.distance_to(op)
-		if d > 0.1 and d < 25.0:
-			sep += op.direction_to(ep) * (25.0 - d) * 1.8
-	var proposed := delta_move + sep * get_process_delta_time()
-	return _move_with_world_collisions(ep, proposed, radius)
 
-func _update_wolf(e: Dictionary, peers: Array, delta: float, speed_mul: float) -> void:
-	var aware := _enemy_common_awareness(e, 225.0, 345.0)
-	var state := String(e["state"])
-	var ep: Vector2 = e["pos"]
-	var d := ep.distance_to(player_pos)
-	if not aware:
-		_enemy_idle_patrol(e, peers, delta, 34.0)
-		return
-	e["state_timer"] = maxf(0.0, float(e["state_timer"]) - delta)
-	match state:
-		"idle", "patrol", "return":
-			e["state"] = "circle"
-			e["state_timer"] = 0.48
-		"circle":
-			var radial := ep.direction_to(player_pos)
-			var side := Vector2(-radial.y, radial.x) * (1.0 if int(e["id"]) % 2 == 0 else -1.0)
-			var dir := (radial * 0.34 + side * 0.94).normalized()
-			e["pos"] = _enemy_move(e, dir * 72.0 * speed_mul * delta, 8.0, peers)
-			if float(e["state_timer"]) <= 0.0 or d < 55.0:
-				e["state"] = "windup"
-				e["state_timer"] = 0.28
-				e["attack_dir"] = ep.direction_to(player_pos)
-				e["has_hit"] = false
-				_play_sound("warn")
-		"windup":
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "charge"
-				e["state_timer"] = 0.34
-		"charge":
-			var dir: Vector2 = e["attack_dir"]
-			e["pos"] = _enemy_move(e, dir * 150.0 * speed_mul * delta, 8.0, peers)
-			if not bool(e["has_hit"]) and (e["pos"] as Vector2).distance_to(player_pos) < 23.0:
-				e["has_hit"] = true
-				_damage_player(8.0, "El lobo embiste")
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "recovery"
-				e["state_timer"] = 0.68
-		"recovery":
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "circle"
-				e["state_timer"] = 0.55
 
-func _update_stalker(e: Dictionary, peers: Array, delta: float, speed_mul: float) -> void:
-	var aware := _enemy_common_awareness(e, 235.0, 355.0)
-	var state := String(e["state"])
-	var ep: Vector2 = e["pos"]
-	var d := ep.distance_to(player_pos)
-	if not aware:
-		_enemy_idle_patrol(e, peers, delta, 28.0)
-		return
-	e["state_timer"] = maxf(0.0, float(e["state_timer"]) - delta)
-	match state:
-		"idle", "patrol", "return":
-			e["state"] = "stalk"
-			e["state_timer"] = 0.8
-		"stalk":
-			var dir := Vector2.ZERO
-			if d > 118.0:
-				dir = ep.direction_to(player_pos)
-			elif d < 82.0:
-				dir = player_pos.direction_to(ep)
-			else:
-				var radial := ep.direction_to(player_pos)
-				dir = Vector2(-radial.y, radial.x) * (1.0 if int(e["id"]) % 2 == 0 else -1.0)
-			e["pos"] = _enemy_move(e, dir.normalized() * 60.0 * speed_mul * delta, 8.0, peers)
-			if float(e["state_timer"]) <= 0.0 and d < 145.0:
-				e["state"] = "windup"
-				e["state_timer"] = 0.46
-				e["attack_dir"] = ep.direction_to(player_pos)
-				e["has_hit"] = false
-				_play_sound("warn")
-		"windup":
-			# La dirección se corrige un poco al principio, pero queda bloqueada antes del salto.
-			if float(e["state_timer"]) > 0.22:
-				e["attack_dir"] = ep.direction_to(player_pos)
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "pounce"
-				e["state_timer"] = 0.23
-		"pounce":
-			var pdir: Vector2 = e["attack_dir"]
-			e["pos"] = _enemy_move(e, pdir * 178.0 * speed_mul * delta, 8.0, peers)
-			if not bool(e["has_hit"]) and (e["pos"] as Vector2).distance_to(player_pos) < 24.0:
-				e["has_hit"] = true
-				_damage_player(10.0, "El acechador salta")
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "recovery"
-				e["state_timer"] = 0.88
-		"recovery":
-			# Se retira durante la recuperación para crear un gap claro.
-			var away := player_pos.direction_to(e["pos"])
-			e["pos"] = _enemy_move(e, away * 38.0 * delta, 8.0, peers)
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "stalk"
-				e["state_timer"] = 0.75
 
-func _update_raider(e: Dictionary, peers: Array, delta: float, speed_mul: float) -> void:
-	var aware := _enemy_common_awareness(e, 215.0, 335.0)
-	var state := String(e["state"])
-	var ep: Vector2 = e["pos"]
-	var d := ep.distance_to(player_pos)
-	if not aware:
-		_enemy_idle_patrol(e, peers, delta, 24.0)
-		return
-	e["state_timer"] = maxf(0.0, float(e["state_timer"]) - delta)
-	match state:
-		"idle", "patrol", "return":
-			e["state"] = "chase"
-		"chase":
-			if d > 40.0:
-				e["pos"] = _enemy_move(e, ep.direction_to(player_pos) * 58.0 * speed_mul * delta, 9.0, peers)
-			else:
-				e["state"] = "windup"
-				e["state_timer"] = 0.66
-				e["has_hit"] = false
-				_play_sound("warn")
-		"windup":
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "strike"
-				e["state_timer"] = 0.12
-				if d < 52.0:
-					e["has_hit"] = true
-					_damage_player(13.0, "Golpe pesado del saqueador")
-		"strike":
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "recovery"
-				e["state_timer"] = 0.96
-		"recovery":
-			if float(e["state_timer"]) <= 0.0:
-				e["state"] = "chase"
 
-func _enemy_idle_patrol(e: Dictionary, peers: Array, delta: float, speed: float) -> void:
-	var ep: Vector2 = e["pos"]
-	var home: Vector2 = e["home"]
-	e["state_timer"] = maxf(0.0, float(e["state_timer"]) - delta)
-	if ep.distance_to(home) > 75.0:
-		e["pos"] = _enemy_move(e, ep.direction_to(home) * speed * delta, 8.0, peers)
-		return
-	if float(e["state_timer"]) <= 0.0:
-		e["state_timer"] = 0.9 + fmod(float(e["id"]) * 0.37 + float(e["phase"]), 1.1)
-		var a := float(e["phase"]) + anim_clock * 0.13
-		e["attack_dir"] = Vector2(cos(a), sin(a))
-	var dir: Vector2 = e.get("attack_dir", Vector2.ZERO)
-	e["pos"] = _enemy_move(e, dir * speed * 0.35 * delta, 8.0, peers)
+
+
+
+
+
+
+
 
 func _damage_player(damage: float, label: String) -> void:
-	hp -= damage
-	hurt_stagger = 0.10
-	stamina_regen_lock = STAMINA_REGEN_DELAY
-	screen_shake = 0.16
-	_spawn_floater(CENTER + Vector2(0, -28), "-%d PV" % int(damage), Color("ff7272"))
-	_spawn_particles(player_pos, Color("d95763"), 9)
-	contextual_hint = label
-	_play_sound("hurt")
+	EnemySystem.damage_player(self, damage, label)
 
 func _kill_enemy(e: Dictionary) -> void:
-	e["alive"] = false
-	var mod := _chunk_state(String(e["chunk"]))
-	var killed: Array = mod["killed_enemies"]
-	var eid := int(e["id"])
-	if not eid in killed:
-		killed.append(eid)
-	var kind := String(e["type"])
-	if kind == "lobo":
-		inventory["comida"] += 1
-		_spawn_floater(_world_to_screen(e["pos"]) + Vector2(0, -18), "+1 comida", Color("9ee493"))
-	elif kind == "acechador":
-		inventory["fibra"] += 1
-		_spawn_floater(_world_to_screen(e["pos"]) + Vector2(0, -18), "+1 fibra", Color("9ee493"))
-	else:
-		inventory["mineral"] += 1
-		_spawn_floater(_world_to_screen(e["pos"]) + Vector2(0, -18), "+1 mineral", Color("9ee493"))
-	_spawn_particles(e["pos"], Color("a85c65"), 18)
-	_play_sound("kill")
+	EnemySystem.kill_enemy(self, e)
 
-# -----------------------------------------------------------------------------
-# Recolección: acción comprometida, sin spam, costes de energía y herramientas.
-# -----------------------------------------------------------------------------
 func _interact() -> void:
-	if menu_mode != "" or placement_type != "" or combat_state != "idle" or hurt_stagger > 0.0:
-		return
-	if harvest_timer > 0.0:
-		return
-	var chest := _nearest_chest(46.0)
-	if chest >= 0:
-		_open_chest(chest)
-		return
-	var target := _nearest_resource(48.0)
-	if target.is_empty():
-		_spawn_floater(INTERACT_CENTER + Vector2(-50, -34), "Nada cerca", Color(0.82, 0.84, 0.78, 0.72))
-		return
-	_start_harvest(target)
+	InteractionSystem.interact(self)
 
 func _nearest_resource(max_dist: float) -> Dictionary:
-	var best: Dictionary = {}
-	var nearest := max_dist + 1.0
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for r_variant in chunk["resources"]:
-			var r: Dictionary = r_variant
-			var rp: Vector2 = r["pos"]
-			var d := rp.distance_to(player_pos)
-			if d <= max_dist and d < nearest:
-				best = r
-				nearest = d
-	return best
+	return InteractionSystem.nearest_resource(self, max_dist)
 
 func _nearest_chest(max_dist: float) -> int:
-	var best := -1
-	var nearest := max_dist + 1.0
-	for i in range(buildings.size()):
-		var b: Dictionary = buildings[i]
-		if String(b.get("type", "")) != "cofre":
-			continue
-		var d := (b["pos"] as Vector2).distance_to(player_pos)
-		if d <= max_dist and d < nearest:
-			nearest = d
-			best = i
-	return best
+	return InteractionSystem.nearest_chest(self, max_dist)
 
 func _start_harvest(r: Dictionary) -> void:
-	var kind := String(r["type"])
-	var needed_tool := ""
-	var duration := 0.30
-	var cost := 2.0
-	if kind == "arbol":
-		needed_tool = "hacha"
-		duration = 0.65
-		cost = 5.0
-	elif kind == "roca":
-		needed_tool = "pico"
-		duration = 0.75
-		cost = 6.0
-	elif kind == "mineral":
-		needed_tool = "pico"
-		duration = 0.82
-		cost = 7.0
-	elif kind == "rama":
-		duration = 0.24
-	elif kind == "fibra":
-		duration = 0.30
-	elif kind == "baya":
-		duration = 0.30
-	elif kind == "piedra_suelta":
-		duration = 0.26
-	if needed_tool != "" and equipped_tool != needed_tool:
-		_spawn_floater(_world_to_screen(r["pos"]) + Vector2(0, -18), "Requiere %s" % needed_tool, Color("f0b36b"))
-		_play_sound("error")
-		return
-	if stamina < cost:
-		_spawn_floater(CENTER + Vector2(0, -28), "SIN ENERGÍA", Color("7dcce5"))
-		_play_sound("error")
-		return
-	stamina = maxf(0.0, stamina - cost)
-	stamina_regen_lock = STAMINA_REGEN_DELAY
-	harvest_target = r
-	harvest_duration = duration
-	harvest_timer = duration
-	harvest_cost = cost
-	harvest_started_pos = player_pos
-	harvest_kind = kind
-	var rp: Vector2 = r["pos"]
-	if rp.distance_to(player_pos) > 0.1:
-		facing = _cardinal(player_pos.direction_to(rp))
-	_play_sound("harvest")
+	HarvestSystem.start(self, r)
 
 func _update_harvest(delta: float) -> void:
-	if harvest_timer <= 0.0:
-		return
-	if harvest_target.is_empty():
-		harvest_timer = 0.0
-		return
-	var target_pos: Vector2 = harvest_target["pos"]
-	if target_pos.distance_to(player_pos) > 48.0 or player_pos.distance_to(harvest_started_pos) > 20.0:
-		_cancel_harvest("Interacción cancelada")
-		return
-	harvest_timer -= delta
-	if harvest_timer <= 0.0:
-		_finish_harvest()
+	HarvestSystem.update(self, delta)
 
 func _cancel_harvest(text: String) -> void:
-	harvest_timer = 0.0
-	harvest_target = {}
-	harvest_kind = ""
-	if text != "":
-		_spawn_floater(CENTER + Vector2(0, -26), text, Color(0.8, 0.82, 0.78, 0.72))
+	HarvestSystem.cancel(self, text)
 
 func _finish_harvest() -> void:
-	if harvest_target.is_empty():
-		return
-	var r := harvest_target
-	var kind := String(r["type"])
-	var damage := 1.0
-	if kind == "arbol" and equipped_tool == "hacha": damage = 1.0
-	if (kind == "roca" or kind == "mineral") and equipped_tool == "pico": damage = 1.0
-	r["hp"] = float(r["hp"]) - damage
-	r["shake"] = 0.28
-	var mod := _chunk_state(String(r["chunk"]))
-	var hp_state: Dictionary = mod["resource_hp"]
-	hp_state[str(int(r["id"]))] = maxf(0.0, float(r["hp"]))
-	_spawn_particles(r["pos"], _resource_particle_color(kind), 8)
-	if float(r["hp"]) <= 0.0:
-		_collect_resource(r)
-	else:
-		_spawn_floater(_world_to_screen(r["pos"]) + Vector2(0, -20), "%d/%d" % [int(r["hp"]), int(r["max_hp"])], Color("e2bd72"))
-	harvest_timer = 0.0
-	harvest_target = {}
-	harvest_kind = ""
+	HarvestSystem.finish(self)
 
 func _collect_resource(r: Dictionary) -> void:
-	var kind := String(r["type"])
-	var amount := 1
-	var inv_key := ""
-	match kind:
-		"arbol":
-			amount = 3
-			inv_key = "madera"
-		"rama":
-			amount = 1
-			inv_key = "madera"
-			tutorial_got_branch = true
-		"roca":
-			amount = 2
-			inv_key = "piedra"
-		"piedra_suelta":
-			amount = 1
-			inv_key = "piedra"
-			tutorial_got_stone = true
-		"fibra":
-			amount = 1
-			inv_key = "fibra"
-		"baya":
-			amount = 1
-			inv_key = "comida"
-		"mineral":
-			amount = 1
-			inv_key = "mineral"
-	if inv_key != "":
-		inventory[inv_key] = int(inventory.get(inv_key, 0)) + amount
-	var mod := _chunk_state(String(r["chunk"]))
-	var removed: Array = mod["removed_resources"]
-	var rid := int(r["id"])
-	if not rid in removed:
-		removed.append(rid)
-	var hp_state: Dictionary = mod["resource_hp"]
-	hp_state.erase(str(rid))
-	if loaded_chunks.has(String(r["chunk"])):
-		var chunk: Dictionary = loaded_chunks[String(r["chunk"])]
-		var resources: Array = chunk["resources"]
-		resources.erase(r)
-	_spawn_floater(_world_to_screen(r["pos"]) + Vector2(0, -17), "+%d %s" % [amount, _material_short(inv_key)], Color("9ee493"))
-	_play_sound("collect")
+	HarvestSystem.collect(self, r)
 
 func _resource_particle_color(kind: String) -> Color:
 	if kind == "arbol" or kind == "rama": return Color("b27a4b")
@@ -1054,152 +525,41 @@ func _close_menu() -> void:
 	_play_sound("ui")
 
 func _craft_item(kind: String) -> void:
-	if not CRAFT_RECIPES.has(kind):
-		return
-	var recipe: Dictionary = CRAFT_RECIPES[kind]
-	if bool(recipe.get("unique", false)) and bool(owned_tools.get(kind, false)):
-		_spawn_floater(CENTER + Vector2(0, 82), "YA POSEES ESTE OBJETO", Color("dfb36d"))
-		_play_sound("error")
-		return
-	var cost: Dictionary = recipe["cost"]
-	if not _can_pay(cost):
-		_spawn_floater(CENTER + Vector2(0, 82), "FALTAN MATERIALES", Color("ed7d78"))
-		_play_sound("error")
-		return
-	_pay(cost)
-	if kind == "hacha" or kind == "pico":
-		owned_tools[kind] = true
-		equipped_tool = kind
-		if kind == "hacha":
-			tutorial_crafted_axe = true
-	else:
-		inventory["venda"] = int(inventory["venda"]) + 1
-	_set_major("Fabricado: %s" % String(recipe["name"]), 1.4)
-	_play_sound("craft")
+	InventorySystem.craft_item(self, kind)
 
 func _toggle_tool(kind: String) -> void:
-	if not bool(owned_tools.get(kind, false)):
-		return
-	equipped_tool = "" if equipped_tool == kind else kind
-	_spawn_floater(CENTER + Vector2(0, 82), "Equipado: %s" % ("manos" if equipped_tool == "" else equipped_tool), Color("b9d6a8"))
-	_play_sound("ui")
+	InventorySystem.toggle_tool(self, kind)
 
 func _eat() -> void:
-	if int(inventory["comida"]) <= 0:
-		_spawn_floater(CENTER + Vector2(0, 82), "Sin comida", Color("ed7d78"))
-		return
-	if hunger >= 99.0:
-		_spawn_floater(CENTER + Vector2(0, 82), "No tienes hambre", Color("d6c58d"))
-		return
-	inventory["comida"] -= 1
-	hunger = minf(100.0, hunger + 30.0)
-	_spawn_floater(CENTER + Vector2(0, 82), "+30 hambre", Color("e6bb67"))
-	_play_sound("collect")
+	InventorySystem.eat(self)
 
 func _use_bandage() -> void:
-	if int(inventory["venda"]) <= 0:
-		_spawn_floater(CENTER + Vector2(0, 82), "Sin vendajes", Color("ed7d78"))
-		return
-	if hp >= 99.0:
-		_spawn_floater(CENTER + Vector2(0, 82), "PV completos", Color("d6c58d"))
-		return
-	inventory["venda"] -= 1
-	hp = minf(100.0, hp + 28.0)
-	_spawn_floater(CENTER + Vector2(0, 82), "+28 PV", Color("8ddd8d"))
-	_play_sound("collect")
+	InventorySystem.use_bandage(self)
 
 func _can_pay(cost: Dictionary) -> bool:
-	for k_variant in cost.keys():
-		var k := String(k_variant)
-		if int(inventory.get(k, 0)) < int(cost[k]):
-			return false
-	return true
+	return InventorySystem.can_pay(self, cost)
 
 func _pay(cost: Dictionary) -> void:
-	for k_variant in cost.keys():
-		var k := String(k_variant)
-		inventory[k] = int(inventory[k]) - int(cost[k])
+	InventorySystem.pay(self, cost)
 
-# -----------------------------------------------------------------------------
-# Construcción móvil: ghost independiente, drag, snap, rotación y confirmación.
-# -----------------------------------------------------------------------------
 func _select_build(kind: String) -> void:
-	if not BUILD_RECIPES.has(kind):
-		return
-	var recipe: Dictionary = BUILD_RECIPES[kind]
-	if not _can_pay(recipe["cost"]):
-		_spawn_floater(CENTER + Vector2(0, 82), "FALTAN MATERIALES", Color("ed7d78"))
-		_play_sound("error")
-		return
-	menu_mode = ""
-	placement_type = kind
-	placement_rotation = 0
-	placement_pos = _snap_build_pos(player_pos + facing * 72.0)
-	_set_major("Mueve el fantasma y confirma", 1.6)
-	_play_sound("ui")
+	BuildingSystem.select_build(self, kind)
 
 func _snap_build_pos(pos: Vector2) -> Vector2:
-	return Vector2(round(pos.x / 16.0) * 16.0, round(pos.y / 16.0) * 16.0)
+	return BuildingSystem.snap_build_pos(pos)
 
 func _set_placement_from_screen(screen_pos: Vector2) -> void:
-	var world := player_pos + (screen_pos - CENTER)
-	var offset := world - player_pos
-	if offset.length() > BUILD_RANGE:
-		offset = offset.normalized() * BUILD_RANGE
-	placement_pos = _snap_build_pos(player_pos + offset)
+	BuildingSystem.set_placement_from_screen(self, screen_pos)
 
 func _placement_valid(pos: Vector2) -> bool:
-	if pos.distance_to(player_pos) < 34.0 or pos.distance_to(player_pos) > BUILD_RANGE + 2.0:
-		return false
-	var test_build := {"type": placement_type, "pos": pos, "rot": placement_rotation}
-	# Evita solapar al jugador.
-	if _building_blocks_circle(test_build, player_pos, PLAYER_RADIUS + 2.0):
-		return false
-	for b_variant in buildings:
-		var b: Dictionary = b_variant
-		if (b["pos"] as Vector2).distance_to(pos) < 52.0:
-			return false
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for r_variant in chunk["resources"]:
-			var r: Dictionary = r_variant
-			var rr := _resource_collision_radius(String(r["type"]))
-			if rr > 0.0 and (r["pos"] as Vector2).distance_to(pos) < rr + 22.0:
-				return false
-	return true
+	return BuildingSystem.placement_valid(self, pos)
 
 func _place_build() -> void:
-	if placement_type == "":
-		return
-	var recipe: Dictionary = BUILD_RECIPES[placement_type]
-	var cost: Dictionary = recipe["cost"]
-	if not _placement_valid(placement_pos):
-		_spawn_floater(_world_to_screen(placement_pos) + Vector2(0, -22), "BLOQUEADO", Color("ef7777"))
-		_play_sound("error")
-		return
-	if not _can_pay(cost):
-		_spawn_floater(CENTER + Vector2(0, 82), "FALTAN MATERIALES", Color("ed7d78"))
-		placement_type = ""
-		return
-	_pay(cost)
-	var chest_store := {"madera": 0, "piedra": 0, "fibra": 0, "comida": 0, "mineral": 0, "venda": 0}
-	buildings.append({"type": placement_type, "pos": placement_pos, "rot": placement_rotation, "chest": chest_store})
-	_spawn_particles(placement_pos, Color("d7c39a"), 16)
-	_set_major("Construido: %s" % String(recipe["name"]), 1.4)
-	_play_sound("build")
-	placement_type = ""
-	placement_drag_touch = -1
-	_save_game()
+	BuildingSystem.place_build(self)
 
 func _cancel_placement() -> void:
-	placement_type = ""
-	placement_drag_touch = -1
-	placement_mouse_drag = false
-	_play_sound("ui")
+	BuildingSystem.cancel_placement(self)
 
-# -----------------------------------------------------------------------------
-# Cofres: UI explícita para inventario <-> almacenamiento.
-# -----------------------------------------------------------------------------
 func _open_chest(index: int) -> void:
 	if index < 0 or index >= buildings.size():
 		return
@@ -1208,50 +568,31 @@ func _open_chest(index: int) -> void:
 	joystick_vec = Vector2.ZERO
 	_play_sound("ui")
 
-func _chest_transfer(item: String, to_chest: bool, all_items: bool = false) -> void:
-	if chest_index < 0 or chest_index >= buildings.size():
-		return
-	var chest: Dictionary = buildings[chest_index]
-	var store: Dictionary = chest["chest"]
-	if to_chest:
-		var have := int(inventory.get(item, 0))
-		if have <= 0:
-			return
-		var amount := have if all_items else 1
-		inventory[item] = have - amount
-		store[item] = int(store.get(item, 0)) + amount
-	else:
-		var have := int(store.get(item, 0))
-		if have <= 0:
-			return
-		var amount := have if all_items else 1
-		store[item] = have - amount
-		inventory[item] = int(inventory.get(item, 0)) + amount
-	_play_sound("ui")
+func _chest_transfer(item: String, to_chest: bool) -> void:
+	InventorySystem.chest_transfer(self, item, to_chest, false)
 
 func _chest_transfer_all(to_chest: bool) -> void:
-	for item_variant in MATERIAL_ORDER:
-		var item := String(item_variant)
-		_chest_transfer(item, to_chest, true)
+	InventorySystem.chest_transfer_all(self, to_chest)
 
-# -----------------------------------------------------------------------------
-# Input móvil/teclado: 3 botones permanentes + minimapa. Placement conserva joystick.
-# -----------------------------------------------------------------------------
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_SPACE: _request_attack()
-			KEY_E: _interact()
-			KEY_I, KEY_TAB: _open_backpack("inventory")
-			KEY_C: _open_backpack("craft")
-			KEY_B: _open_backpack("build")
-			KEY_M: _open_map()
-			KEY_F: _eat()
-			KEY_H: _use_bandage()
-			KEY_ESCAPE:
+		var action := InputActions.event_action(event)
+		match action:
+			"attack": _request_attack()
+			"interact": _interact()
+			"inventory": _open_backpack("inventory")
+			"craft": _open_backpack("craft")
+			"build": _open_backpack("build")
+			"map": _open_map()
+			"eat": _eat()
+			"bandage": _use_bandage()
+			"cancel":
 				if placement_type != "": _cancel_placement()
 				else: _close_menu()
-			KEY_N: _new_world()
+			_:
+				# Nuevo mundo por teclado queda deliberadamente deshabilitado para proteger saves.
+				if DEBUG_ALLOW_NEW_WORLD_SHORTCUT and event.keycode == KEY_N:
+					_set_major("Nuevo mundo debug bloqueado en build estable", 2.0)
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			_touch_down(event.index, event.position)
@@ -1477,21 +818,7 @@ func _tutorial_text() -> String:
 	return ""
 
 func _update_context_hint() -> void:
-	if menu_mode != "" or placement_type != "":
-		contextual_hint = ""
-		return
-	var chest := _nearest_chest(46.0)
-	if chest >= 0:
-		contextual_hint = "ABRIR COFRE"
-		return
-	var r := _nearest_resource(48.0)
-	if not r.is_empty():
-		var kind := String(r["type"])
-		if kind == "arbol": contextual_hint = "TALAR" if equipped_tool == "hacha" else "REQUIERE HACHA"
-		elif kind == "roca" or kind == "mineral": contextual_hint = "PICAR" if equipped_tool == "pico" else "REQUIERE PICO"
-		else: contextual_hint = "RECOGER"
-		return
-	contextual_hint = "INTERACTUAR"
+	contextual_hint = InteractionSystem.interaction_label(self)
 
 func _set_major(text: String, seconds: float) -> void:
 	major_message = text
@@ -1508,10 +835,7 @@ func _screen_to_world(pos: Vector2) -> Vector2:
 
 func _draw() -> void:
 	_draw_terrain()
-	_draw_buildings()
-	_draw_resources()
-	_draw_enemies()
-	_draw_player(CENTER)
+	WorldRenderer.draw_entities(self)
 	_draw_particles()
 	_draw_weather()
 	_draw_hud()
@@ -1521,9 +845,6 @@ func _draw() -> void:
 		_draw_menu()
 	_draw_floaters()
 
-# -----------------------------------------------------------------------------
-# Terreno y mundo
-# -----------------------------------------------------------------------------
 func _draw_terrain() -> void:
 	var camera_tl := player_pos - CENTER
 	var min_x := int(floor(camera_tl.x / TILE_SIZE)) - 1
@@ -1544,7 +865,7 @@ func _draw_terrain() -> void:
 		draw_arc(safe_center, SAFE_RADIUS, 0, TAU, 96, Color(0.75, 0.83, 0.55, 0.16), 2.0)
 
 func _tile_hash(x: int, y: int) -> int:
-	return absi(world_seed ^ (x * 92837111) ^ (y * 689287499))
+	return WorldGenerator.tile_hash(world_seed, x, y)
 
 func _draw_ground_detail(tx: int, ty: int, sp: Vector2, biome: String) -> void:
 	var h := _tile_hash(tx, ty)
@@ -1561,20 +882,7 @@ func _draw_ground_detail(tx: int, ty: int, sp: Vector2, biome: String) -> void:
 		draw_line(sp + offset + Vector2(-5, 2), sp + offset + Vector2(1, -3), Color(0.47, 0.43, 0.44, 0.62), 1.0)
 		draw_line(sp + offset + Vector2(1, -3), sp + offset + Vector2(5, 1), Color(0.47, 0.43, 0.44, 0.62), 1.0)
 
-func _draw_resources() -> void:
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for r_variant in chunk["resources"]:
-			var r: Dictionary = r_variant
-			var rp: Vector2 = r["pos"]
-			if rp.distance_to(player_pos) > 450.0:
-				continue
-			var sp := _world_to_screen(rp)
-			var shake := sin(anim_clock * 55.0) * 3.0 if float(r["shake"]) > 0.0 else 0.0
-			sp.x += shake
-			_draw_resource_sprite(String(r["type"]), sp)
-			if float(r["hp"]) < float(r["max_hp"]):
-				_draw_small_bar(sp + Vector2(-13, -28), 26.0, float(r["hp"]) / float(r["max_hp"]), Color("d99d54"))
+
 
 func _draw_resource_sprite(kind: String, p: Vector2) -> void:
 	match kind:
@@ -1608,13 +916,7 @@ func _draw_resource_sprite(kind: String, p: Vector2) -> void:
 			draw_colored_polygon(PackedVector2Array([p + Vector2(-5, 2), p + Vector2(-1, -18), p + Vector2(5, -4), p + Vector2(8, 6)]), Color("65d5df"))
 			draw_colored_polygon(PackedVector2Array([p + Vector2(4, 6), p + Vector2(9, -12), p + Vector2(14, 7)]), Color("8cebed"))
 
-func _draw_buildings() -> void:
-	for b_variant in buildings:
-		var b: Dictionary = b_variant
-		var bp: Vector2 = b["pos"]
-		if bp.distance_to(player_pos) > 455.0:
-			continue
-		_draw_building_sprite(String(b["type"]), _world_to_screen(bp), int(b.get("rot", 0)), false, true)
+
 
 func _draw_building_sprite(kind: String, p: Vector2, rot: int, preview: bool, valid: bool) -> void:
 	var alpha := 0.68 if preview else 1.0
@@ -1646,20 +948,7 @@ func _draw_building_sprite(kind: String, p: Vector2, rot: int, preview: bool, va
 # -----------------------------------------------------------------------------
 # Enemigos y telegraphs
 # -----------------------------------------------------------------------------
-func _draw_enemies() -> void:
-	for key_variant in loaded_chunks.keys():
-		var chunk: Dictionary = loaded_chunks[key_variant]
-		for e_variant in chunk["enemies"]:
-			var e: Dictionary = e_variant
-			if not bool(e.get("alive", true)):
-				continue
-			var ep: Vector2 = e["pos"]
-			if ep.distance_to(player_pos) > 455.0:
-				continue
-			var sp := _world_to_screen(ep)
-			_draw_enemy_telegraph(e, sp)
-			_draw_enemy_sprite(e, sp)
-			_draw_small_bar(sp + Vector2(-16, -28), 32.0, float(e["hp"]) / float(e["max_hp"]), Color("d85c62"))
+
 
 func _draw_enemy_telegraph(e: Dictionary, p: Vector2) -> void:
 	var state := String(e.get("state", "idle"))
@@ -2313,117 +1602,28 @@ func _play_sound(name: String) -> void:
 # -----------------------------------------------------------------------------
 # Persistencia v0.3: mundo, chunks modificados, equipamiento, mapa, tutorial y cofres.
 # -----------------------------------------------------------------------------
-func _save_game() -> void:
-	var building_data: Array = []
-	for b_variant in buildings:
-		var b: Dictionary = b_variant
-		var pos: Vector2 = b["pos"]
-		building_data.append({
-			"type": b["type"],
-			"pos": [pos.x, pos.y],
-			"rot": int(b.get("rot", 0)),
-			"chest": b.get("chest", {})
-		})
-	var explored: Array = []
-	for key_variant in explored_chunks.keys():
-		explored.append(String(key_variant))
-	var data := {
-		"version": 3,
-		"seed": world_seed,
-		"player": [player_pos.x, player_pos.y],
-		"spawn": [spawn_pos.x, spawn_pos.y],
-		"hp": hp,
-		"hunger": hunger,
-		"stamina": stamina,
-		"day_clock": day_clock,
-		"day_number": day_number,
-		"weather": weather,
-		"inventory": inventory,
-		"owned_tools": owned_tools,
-		"equipped_tool": equipped_tool,
-		"equipped_weapon": equipped_weapon,
-		"chunk_mods": chunk_mods,
-		"buildings": building_data,
-		"explored_chunks": explored,
-		"tutorial": {
-			"step": tutorial_step,
-			"done": tutorial_done,
-			"moved": tutorial_moved,
-			"branch": tutorial_got_branch,
-			"stone": tutorial_got_stone,
-			"bag": tutorial_opened_bag,
-			"axe": tutorial_crafted_axe,
-		}
-	}
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file != null:
-		file.store_string(JSON.stringify(data))
-		file.close()
+func _mark_dirty(reason: String = "") -> void:
+	save_dirty = true
+	if reason != "":
+		last_dirty_reason = reason
+
+func _save_game(force: bool = false) -> bool:
+	if save_blocked:
+		return false
+	if not force and not save_dirty:
+		return true
+	var result: Dictionary = SaveSystem.save_state(GameState.snapshot(self))
+	if bool(result.get("ok", false)):
+		save_dirty = false
+		return true
+	if String(result.get("error", "")) == "primary_invalid_preserved":
+		save_blocked = true
+		save_block_reason = String(result.get("detail", "invalid_primary"))
+		_set_major("Save inválido protegido · guardado bloqueado", 3.5)
+	return false
 
 func _load_game() -> bool:
-	var text := FileAccess.get_file_as_string(SAVE_PATH)
-	var data_variant = JSON.parse_string(text)
-	if data_variant == null or not data_variant is Dictionary:
+	var result: Dictionary = SaveSystem.load_state()
+	if not bool(result.get("ok", false)):
 		return false
-	var data: Dictionary = data_variant
-	if int(data.get("version", 0)) != 3:
-		return false
-	world_seed = int(data.get("seed", 0))
-	if world_seed == 0:
-		return false
-	var pp: Array = data.get("player", [0.0, 0.0])
-	player_pos = Vector2(float(pp[0]), float(pp[1]))
-	var sp: Array = data.get("spawn", [0.0, 0.0])
-	spawn_pos = Vector2(float(sp[0]), float(sp[1]))
-	hp = float(data.get("hp", 100.0))
-	hunger = float(data.get("hunger", 100.0))
-	stamina = float(data.get("stamina", 100.0))
-	day_clock = float(data.get("day_clock", 0.28))
-	day_number = int(data.get("day_number", 1))
-	weather = String(data.get("weather", "despejado"))
-	var inv: Dictionary = data.get("inventory", {})
-	for k_variant in inventory.keys():
-		var k := String(k_variant)
-		inventory[k] = int(inv.get(k, inventory[k]))
-	var tools: Dictionary = data.get("owned_tools", {})
-	owned_tools["hacha"] = bool(tools.get("hacha", false))
-	owned_tools["pico"] = bool(tools.get("pico", false))
-	equipped_tool = String(data.get("equipped_tool", ""))
-	equipped_weapon = String(data.get("equipped_weapon", "espada_oxidada"))
-	chunk_mods = data.get("chunk_mods", {})
-	buildings.clear()
-	for raw_variant in data.get("buildings", []):
-		var raw: Dictionary = raw_variant
-		var arr: Array = raw.get("pos", [0.0, 0.0])
-		var store: Dictionary = raw.get("chest", {})
-		for item_variant in MATERIAL_ORDER:
-			var item := String(item_variant)
-			if not store.has(item):
-				store[item] = 0
-		buildings.append({
-			"type": raw.get("type", "fogata"),
-			"pos": Vector2(float(arr[0]), float(arr[1])),
-			"rot": int(raw.get("rot", 0)),
-			"chest": store,
-		})
-	explored_chunks.clear()
-	for key_variant in data.get("explored_chunks", []):
-		explored_chunks[String(key_variant)] = true
-	var tut: Dictionary = data.get("tutorial", {})
-	tutorial_step = int(tut.get("step", 0))
-	tutorial_done = bool(tut.get("done", false))
-	tutorial_moved = bool(tut.get("moved", false))
-	tutorial_got_branch = bool(tut.get("branch", false))
-	tutorial_got_stone = bool(tut.get("stone", false))
-	tutorial_opened_bag = bool(tut.get("bag", false))
-	tutorial_crafted_axe = bool(tut.get("axe", false))
-	combat_state = "idle"
-	combat_timer = 0.0
-	attack_buffered = false
-	harvest_target = {}
-	harvest_timer = 0.0
-	menu_mode = ""
-	placement_type = ""
-	loaded_chunks.clear()
-	current_chunk = Vector2i(999999, 999999)
-	return true
+	return GameState.apply(self, result.get("data", {}))
