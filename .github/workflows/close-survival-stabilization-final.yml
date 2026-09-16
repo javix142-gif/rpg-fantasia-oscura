@@ -1,0 +1,289 @@
+name: Final Closure Ceniza Salvaje v0.3
+
+on:
+  push:
+    branches:
+      - artifact/survival-v0.3-stabilization
+    paths:
+      - '.github/workflows/close-survival-stabilization-final.yml'
+      - 'survival_prototype/QA_FINAL.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  final-closure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      XDG_DATA_HOME: ${{ github.workspace }}/.qa-final-data
+      XDG_CONFIG_HOME: ${{ github.workspace }}/.qa-final-config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Diff and source hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=6c2d49a978ef6c1edcce8e41b4b2d931eefe590d
+          git diff --check "$BASE"...HEAD
+          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16})' -- survival_prototype .github/workflows AGENTS.md PROJECT_STATE.md SESSION_SUMMARY.md; then exit 1; fi
+          if git grep -nE '(/home/[A-Za-z0-9._-]+/|C:\\Users\\)' -- survival_prototype -- '*.gd' '*.cfg' '*.md'; then exit 1; fi
+          echo "V03_LINES=$(wc -l < survival_prototype/v03.gd)" >> "$GITHUB_ENV"
+          echo "RUNTIME_MODULES=$(find survival_prototype/core survival_prototype/world survival_prototype/systems survival_prototype/ui -type f -name '*.gd' | wc -l)" >> "$GITHUB_ENV"
+
+      - name: Install verified Godot and templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          GZIP="$RUNNER_TEMP/Godot.zip"
+          TPZ="$RUNNER_TEMP/templates.tpz"
+          curl -fL --retry 5 "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" -o "$GZIP"
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $GZIP" | sha256sum -c -
+          curl -fL --retry 5 "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" -o "$TPZ"
+          echo "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011  $TPZ" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/godot" "$RUNNER_TEMP/tpl" "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable" "$XDG_CONFIG_HOME"
+          unzip -q "$GZIP" -d "$RUNNER_TEMP/godot"
+          unzip -q "$TPZ" -d "$RUNNER_TEMP/tpl"
+          cp -a "$RUNNER_TEMP/tpl/templates/." "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/"
+          GODOT_BIN="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GODOT_BIN" >> "$GITHUB_ENV"
+          "$GODOT_BIN" --version | tee "$RUNNER_TEMP/version.txt"
+          grep -F '4.7.2.stable.official.ed1daf0bf' "$RUNNER_TEMP/version.txt"
+          command -v xvfb-run
+
+      - name: Initial parse regression smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/parse.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/parse.log"; then exit 1; fi
+          CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/regression_runner.gd 2>&1 | tee "$RUNNER_TEMP/regression.log"
+          grep -F 'REGRESSION_RESULT=12/12 PASS' "$RUNNER_TEMP/regression.log"
+          set +e
+          XDG_DATA_HOME="$RUNNER_TEMP/smoke-a" timeout 8s "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" > "$RUNNER_TEMP/smoke-a.log" 2>&1
+          CODE=$?
+          set -e
+          cat "$RUNNER_TEMP/smoke-a.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Attempt to call|ERROR:.*script" "$RUNNER_TEMP/smoke-a.log"; then exit 1; fi
+          [[ "$CODE" -eq 0 || "$CODE" -eq 124 ]]
+          echo 'INITIAL_GATES=PASS'
+
+      - name: Functional E2E across process restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATA="$RUNNER_TEMP/functional"
+          mkdir -p "$DATA"
+          XDG_DATA_HOME="$DATA" CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_functional_stage1.gd 2>&1 | tee "$RUNNER_TEMP/functional1.log"
+          XDG_DATA_HOME="$DATA" CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_functional_stage2.gd 2>&1 | tee "$RUNNER_TEMP/functional2.log"
+          grep -F 'FUNCTIONAL_INTEGRAL_RESULT=25/25 PASS' "$RUNNER_TEMP/functional2.log"
+          grep -F 'SAVE_END_TO_END=PASS' "$RUNNER_TEMP/functional2.log"
+
+      - name: Corrupt save E2E
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATA="$RUNNER_TEMP/corrupt"
+          mkdir -p "$DATA"
+          XDG_DATA_HOME="$DATA" CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_functional_stage1.gd >/dev/null 2>&1
+          XDG_DATA_HOME="$DATA" CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_corrupt_prepare.gd 2>&1 | tee "$RUNNER_TEMP/corrupt1.log"
+          XDG_DATA_HOME="$DATA" CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_corrupt_verify.gd 2>&1 | tee "$RUNNER_TEMP/corrupt2.log"
+          grep -F 'SAVE_CORRUPTO=PASS' "$RUNNER_TEMP/corrupt2.log"
+          grep -F 'BACKUP_FALLBACK=PASS' "$RUNNER_TEMP/corrupt2.log"
+          grep -F 'BLOCKED_WRITE=PASS' "$RUNNER_TEMP/corrupt2.log"
+
+      - name: Capture post-refactor visual evidence
+        shell: bash
+        env:
+          CAPTURE_DIR: ${{ github.workspace }}/qa-final/screenshots
+        run: |
+          set -euo pipefail
+          mkdir -p "$CAPTURE_DIR" "$RUNNER_TEMP/visual"
+          XDG_DATA_HOME="$RUNNER_TEMP/visual" CAPTURE_DIR="$CAPTURE_DIR" xvfb-run -a -s "-screen 0 1280x720x24" "$GODOT_BIN" --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/closure_visual_capture.gd 2>&1 | tee "$RUNNER_TEMP/visual.log"
+          grep -F 'VISUAL_CAPTURE=7/7 PASS' "$RUNNER_TEMP/visual.log"
+          for f in 01_spawn.png 02_exploration.png 03_combat.png 04_inventory_crafting.png 05_building.png 06_map.png 07_save_load.png; do test -s "$CAPTURE_DIR/$f"; done
+          (cd "$GITHUB_WORKSPACE/qa-final" && zip -q -r Ceniza-Salvaje-v0.3-stabilization-screens.zip screenshots)
+          unzip -tq "$GITHUB_WORKSPACE/qa-final/Ceniza-Salvaje-v0.3-stabilization-screens.zip"
+
+      - name: Verify real export PCK contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          PCK="$RUNNER_TEMP/Ceniza-Salvaje-v0.3-stabilization.pck"
+          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --export-pack "Android" "$PCK" 2>&1 | tee "$RUNNER_TEMP/pack.log"
+          test -s "$PCK"
+          cat > "$RUNNER_TEMP/check_pack.gd" <<'GDSCRIPT'
+          extends SceneTree
+          func _initialize() -> void:
+              var main_scene: Variant = load("res://main.tscn")
+              if main_scene == null:
+                  printerr("Main scene not loadable from exported PCK")
+                  quit(2)
+                  return
+              var loadable := [
+                  "res://v03.gd", "res://core/game_state.gd", "res://world/world_generator.gd",
+                  "res://world/spatial_index.gd", "res://systems/persistence/save_system.gd",
+                  "res://systems/input/input_actions.gd", "res://systems/interaction/interaction_system.gd",
+                  "res://systems/interaction/harvest_system.gd", "res://systems/combat/combat_system.gd",
+                  "res://systems/enemies/enemy_system.gd", "res://systems/inventory/inventory_system.gd",
+                  "res://systems/building/building_system.gd", "res://systems/environment/day_weather_system.gd",
+                  "res://ui/world_renderer.gd"
+              ]
+              for path in loadable:
+                  if load(path) == null:
+                      printerr("Runtime resource not loadable from PCK: " + path)
+                      quit(2)
+                      return
+              var excluded := [
+                  "res://v02.gd", "res://main.gd", "res://ci_generate_v03.py", "res://ci_source_fix.py",
+                  "res://v03_payload/part_00.txt", "res://tools/apply_stabilization.py",
+                  "res://tests/regression_runner.gd", "res://docs/BASELINE_V03.md",
+                  "res://BUILD_TRIGGER_V02_2.txt", "res://V03_BUILD_TRIGGER.txt", "res://VERSION_V02.txt",
+                  "res://QA_CLOSURE.trigger"
+              ]
+              for path in excluded:
+                  if FileAccess.file_exists(path):
+                      printerr("Development/historical resource leaked into PCK: " + path)
+                      quit(3)
+                      return
+              print("EXPORT_FILTER=PASS")
+              quit(0)
+          GDSCRIPT
+          "$GODOT_BIN" --headless --main-pack "$PCK" --script "$RUNNER_TEMP/check_pack.gd" 2>&1 | tee "$RUNNER_TEMP/check-pack.log"
+          grep -F 'EXPORT_FILTER=PASS' "$RUNNER_TEMP/check-pack.log"
+
+      - name: Configure Android toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-35" "build-tools;35.0.0" >/dev/null
+          JAVA_BIN="$(readlink -f "$(command -v java)")"
+          JAVA_HOME_ACTUAL="$(dirname "$(dirname "$JAVA_BIN")")"
+          echo "JAVA_HOME_ACTUAL=$JAVA_HOME_ACTUAL" >> "$GITHUB_ENV"
+          SETTINGS="$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres"
+          test -f "$SETTINGS"
+          set_path() { local key="$1" value="$2"; if grep -q "^${key} =" "$SETTINGS"; then sed -i "s|^${key} =.*|${key} = \"${value}\"|" "$SETTINGS"; else printf '%s = "%s"\n' "$key" "$value" >> "$SETTINGS"; fi; }
+          set_path "export/android/android_sdk_path" "$SDK_ROOT"
+          set_path "export/android/java_sdk_path" "$JAVA_HOME_ACTUAL"
+          ANDROID_DIR="$GITHUB_WORKSPACE/survival_prototype/android"
+          rm -rf "$ANDROID_DIR"
+          mkdir -p "$ANDROID_DIR/build" "$ANDROID_DIR/plugins"
+          unzip -q "$XDG_DATA_HOME/godot/export_templates/4.7.2.stable/android_source.zip" -d "$ANDROID_DIR/build"
+          printf '%s\n' '4.7.2.stable' > "$ANDROID_DIR/.build_version"
+          touch "$ANDROID_DIR/build/.gdignore"
+          chmod +x "$ANDROID_DIR/build/gradlew"
+
+      - name: Export and verify Android APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/qa-final"
+          OUT="$GITHUB_WORKSPACE/qa-final/Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk"
+          "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --export-debug "Android" "$OUT" 2>&1 | tee "$RUNNER_TEMP/apk-export.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Export failed|BUILD FAILED" "$RUNNER_TEMP/apk-export.log"; then exit 1; fi
+          test -s "$OUT"
+          BT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools/35.0.0"
+          "$BT/aapt" dump badging "$OUT" | tee "$GITHUB_WORKSPACE/qa-final/aapt.txt"
+          grep -F "package: name='org.cenizasalvaje.v03'" "$GITHUB_WORKSPACE/qa-final/aapt.txt"
+          grep -F "sdkVersion:'24'" "$GITHUB_WORKSPACE/qa-final/aapt.txt"
+          grep -F "targetSdkVersion:'35'" "$GITHUB_WORKSPACE/qa-final/aapt.txt"
+          grep -F "native-code: 'arm64-v8a'" "$GITHUB_WORKSPACE/qa-final/aapt.txt"
+          "$BT/aapt" dump xmltree "$OUT" AndroidManifest.xml | tee "$GITHUB_WORKSPACE/qa-final/manifest.txt"
+          grep -F 'android.intent.action.MAIN' "$GITHUB_WORKSPACE/qa-final/manifest.txt"
+          grep -F 'android.intent.category.LAUNCHER' "$GITHUB_WORKSPACE/qa-final/manifest.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$OUT" | tee "$GITHUB_WORKSPACE/qa-final/signature.txt"
+          "$BT/zipalign" -c -P 16 -v 4 "$OUT" > "$GITHUB_WORKSPACE/qa-final/zipalign.txt"
+          unzip -tq "$OUT"
+          mapfile -t ABIS < <(zipinfo -1 "$OUT" | awk -F/ '/^lib\/[^/]+\//{print $2}' | sort -u)
+          [[ "${#ABIS[@]}" -eq 1 && "${ABIS[0]}" == 'arm64-v8a' ]]
+          SIZE=$(stat -c '%s' "$OUT")
+          SHA=$(sha256sum "$OUT" | awk '{print $1}')
+          echo "APK_SIZE_BYTES=$SIZE" >> "$GITHUB_ENV"
+          echo "APK_SHA256=$SHA" >> "$GITHUB_ENV"
+
+      - name: Final parse regression smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --editor --quit --path "$GITHUB_WORKSPACE/survival_prototype" 2>&1 | tee "$RUNNER_TEMP/final-parse.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Compile Error|Failed to load script" "$RUNNER_TEMP/final-parse.log"; then exit 1; fi
+          CENIZA_CLOSURE_TEST=1 "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" --script res://tests/regression_runner.gd 2>&1 | tee "$RUNNER_TEMP/final-regression.log"
+          grep -F 'REGRESSION_RESULT=12/12 PASS' "$RUNNER_TEMP/final-regression.log"
+          set +e
+          XDG_DATA_HOME="$RUNNER_TEMP/smoke-final" timeout 8s "$GODOT_BIN" --headless --path "$GITHUB_WORKSPACE/survival_prototype" > "$RUNNER_TEMP/smoke-final.log" 2>&1
+          CODE=$?
+          set -e
+          cat "$RUNNER_TEMP/smoke-final.log"
+          if grep -E "SCRIPT ERROR|Parse Error|Invalid call|Invalid get index|Attempt to call|ERROR:.*script" "$RUNNER_TEMP/smoke-final.log"; then exit 1; fi
+          [[ "$CODE" -eq 0 || "$CODE" -eq 124 ]]
+          cat > "$GITHUB_WORKSPACE/qa-final/QA_METADATA.txt" <<EOF
+          STATUS=TECHNICAL_CLOSURE_PASS
+          SOURCE_COMMIT=$GITHUB_SHA
+          GODOT=4.7.2.stable.official.ed1daf0bf
+          REGRESSION=12/12 PASS
+          PROJECT_PARSE=PASS
+          HEADLESS_SMOKE=PASS
+          FUNCTIONAL_INTEGRAL=25/25 PASS
+          SAVE_END_TO_END=PASS
+          SAVE_CORRUPTO=PASS
+          BACKUP_FALLBACK=PASS
+          EXPORT_FILTER=PASS
+          VISUAL_CAPTURE=7/7
+          APK_SIZE_BYTES=$APK_SIZE_BYTES
+          APK_SHA256=$APK_SHA256
+          PACKAGE=org.cenizasalvaje.v03
+          MIN_SDK=24
+          TARGET_SDK=35
+          ABI=arm64-v8a
+          V03_LINES=$V03_LINES
+          RUNTIME_MODULES=$RUNTIME_MODULES
+          ANDROID_DEVICE_TOUCH=NOT_VALIDATED
+          EOF
+          cat "$GITHUB_WORKSPACE/qa-final/QA_METADATA.txt"
+          echo 'FINAL_GATES=PASS'
+
+      - name: Upload QA artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Ceniza-Salvaje-v0.3-final-closure
+          path: |
+            qa-final/Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk
+            qa-final/Ceniza-Salvaje-v0.3-stabilization-screens.zip
+            qa-final/screenshots/*.png
+            qa-final/QA_METADATA.txt
+            qa-final/aapt.txt
+            qa-final/manifest.txt
+            qa-final/signature.txt
+            qa-final/zipalign.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish prerelease evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ceniza-salvaje-v0.3-stabilization-closure
+        run: |
+          set -euo pipefail
+          APK="$GITHUB_WORKSPACE/qa-final/Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk"
+          ZIP="$GITHUB_WORKSPACE/qa-final/Ceniza-Salvaje-v0.3-stabilization-screens.zip"
+          META="$GITHUB_WORKSPACE/qa-final/QA_METADATA.txt"
+          PNGS=("$GITHUB_WORKSPACE"/qa-final/screenshots/*.png)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$ZIP" "$META" "${PNGS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$APK" "$ZIP" "$META" "${PNGS[@]}" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Ceniza Salvaje v0.3 - Stabilization Closure' --notes 'Cierre QA: regresión, parse, smoke, funcional E2E, save corrupto, PCK limpio, capturas y APK. Touch físico Android pendiente.' --prerelease
+          fi
