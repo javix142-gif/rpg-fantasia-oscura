@@ -6,6 +6,7 @@ on:
       - artifact/survival-v0.3-stabilization
     paths:
       - 'survival_prototype/tools/apply_stabilization.py'
+      - 'survival_prototype/tools/APPLY_STABILIZATION.trigger'
   workflow_dispatch:
 
 permissions:
