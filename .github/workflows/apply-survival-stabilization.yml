@@ -1,0 +1,53 @@
+name: Apply Ceniza Salvaje v0.3 Stabilization
+
+on:
+  push:
+    branches:
+      - artifact/survival-v0.3-stabilization
+    paths:
+      - 'survival_prototype/tools/apply_stabilization.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+
+      - name: Guard and apply extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          BEFORE=$(wc -l < survival_prototype/v03.gd)
+          python3 survival_prototype/tools/apply_stabilization.py
+          AFTER=$(wc -l < survival_prototype/v03.gd)
+          test "$AFTER" -lt "$BEFORE"
+          grep -F 'const SaveSystem = preload(' survival_prototype/v03.gd
+          grep -F 'SaveSystem.save_state(GameState.snapshot(self))' survival_prototype/v03.gd
+          grep -F 'WorldRenderer.draw_entities(self)' survival_prototype/v03.gd
+          grep -F 'CombatSystem.update(self, delta)' survival_prototype/v03.gd
+          grep -F 'EnemySystem.update(self, delta)' survival_prototype/v03.gd
+          git diff --check
+          echo "V03_LINES_BEFORE=$BEFORE"
+          echo "V03_LINES_AFTER=$AFTER"
+
+      - name: Persist transformed runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- survival_prototype/v03.gd; then
+            echo 'No runtime diff to persist.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add survival_prototype/v03.gd
+          git commit -m 'Modularize v0.3 runtime and wire safe persistence [skip ci]'
+          git push origin HEAD:artifact/survival-v0.3-stabilization
