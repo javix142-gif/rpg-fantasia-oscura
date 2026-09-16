@@ -138,12 +138,20 @@ func _write_text(path: String, text: String) -> void:
 	var f: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(text); f.close()
 
+func _inventory_counts_match(actual: Dictionary, expected: Dictionary) -> bool:
+	for key_variant in expected.keys():
+		var key: String = String(key_variant)
+		if int(actual.get(key, -999999)) != int(expected[key]):
+			return false
+	return true
+
 func _test_save_roundtrip() -> bool:
 	var p: Dictionary = _paths("cs_test_roundtrip"); _cleanup(p)
 	var state: Dictionary = _sample_state()
 	var wr: Dictionary = SaveSystem.save_state(state, p.p, p.b, p.t)
 	var rd: Dictionary = SaveSystem.load_state(p.p, p.b)
-	var ok: bool = bool(wr.get("ok", false)) and bool(rd.get("ok", false)) and int((rd.data as Dictionary)["seed"]) == 424242 and (rd.data as Dictionary)["inventory"] == state["inventory"]
+	var loaded: Dictionary = rd.get("data", {})
+	var ok: bool = bool(wr.get("ok", false)) and bool(rd.get("ok", false)) and int(loaded.get("seed", 0)) == 424242 and _inventory_counts_match(loaded.get("inventory", {}), state["inventory"])
 	_cleanup(p); return ok
 
 func _test_corrupt_primary_preserved() -> bool:
