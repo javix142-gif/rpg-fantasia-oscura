@@ -568,8 +568,8 @@ func _open_chest(index: int) -> void:
 	joystick_vec = Vector2.ZERO
 	_play_sound("ui")
 
-func _chest_transfer(item: String, to_chest: bool) -> void:
-	InventorySystem.chest_transfer(self, item, to_chest, false)
+func _chest_transfer(item: String, to_chest: bool, all_items: bool = false) -> void:
+	InventorySystem.chest_transfer(self, item, to_chest, all_items)
 
 func _chest_transfer_all(to_chest: bool) -> void:
 	InventorySystem.chest_transfer_all(self, to_chest)
