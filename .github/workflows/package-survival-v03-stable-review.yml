@@ -2,238 +2,123 @@ name: Package Ceniza Salvaje v0.3 stable review (no release)
 
 on:
   push:
-    branches:
-      - artifact/survival-v0.3-stabilization
-    paths:
-      - .github/workflows/package-survival-v03-stable-review.yml
+    branches: [artifact/survival-v0.3-stabilization]
+    paths: [.github/workflows/package-survival-v03-stable-review.yml]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  formal-closure:
+  package:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - name: Checkout exact stabilization branch
+      - name: Checkout stabilization source and formal closure docs
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
-      - name: Verify source freeze, full diff scope, docs and secrets
+      - name: Verify tested code remains unchanged and docs are complete
         shell: bash
         run: |
           set -euo pipefail
           TESTED=a417530ef3ae1f4f988f91f6e7733ab19564a8c7
           BASE=6c2d49a978ef6c1edcce8e41b4b2d931eefe590d
           test "$(git merge-base "$TESTED" HEAD)" = "$TESTED"
-          test "$(git diff --name-only "$TESTED" HEAD)" = '.github/workflows/package-survival-v03-stable-review.yml'
           git diff --check "$BASE" HEAD
-          git diff --name-status "$BASE" HEAD | tee "$RUNNER_TEMP/complete-diff-files.txt"
-          git diff --stat "$BASE" HEAD | tee "$RUNNER_TEMP/complete-diff-stat.txt"
-          for file in AGENTS.md PROJECT_STATE.md SESSION_SUMMARY.md survival_prototype/README.md survival_prototype/docs/ARCHITECTURE.md survival_prototype/docs/SAVE_FORMAT.md survival_prototype/docs/NAVIGATION_FUTURE.md survival_prototype/docs/BASELINE_V03.md survival_prototype/tests/regression_runner.gd survival_prototype/project.godot survival_prototype/main.tscn survival_prototype/v03.gd survival_prototype/export_presets.cfg; do test -s "$file"; done
-          grep -F 'SAVE_VERSION = 4' survival_prototype/docs/SAVE_FORMAT.md
-          grep -F 'project.godot → main.tscn → v03.gd' survival_prototype/README.md
-          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16})' -- survival_prototype .github/workflows AGENTS.md PROJECT_STATE.md SESSION_SUMMARY.md; then echo 'Potential secret'; exit 1; fi
+          while IFS= read -r path; do
+            case "$path" in
+              PROJECT_STATE.md|SESSION_SUMMARY.md|survival_prototype/docs/FINAL_CLOSURE.md|.github/workflows/package-survival-v03-stable-review.yml) ;;
+              *) echo "Runtime or out-of-scope change since QA: $path"; exit 1 ;;
+            esac
+          done < <(git diff --name-only "$TESTED" HEAD)
+          for file in AGENTS.md PROJECT_STATE.md SESSION_SUMMARY.md survival_prototype/README.md survival_prototype/docs/ARCHITECTURE.md survival_prototype/docs/SAVE_FORMAT.md survival_prototype/docs/NAVIGATION_FUTURE.md survival_prototype/docs/FINAL_CLOSURE.md survival_prototype/project.godot survival_prototype/main.tscn survival_prototype/v03.gd; do test -s "$file"; done
+          grep -F 'PASS_WITH_WARNINGS' PROJECT_STATE.md SESSION_SUMMARY.md survival_prototype/docs/FINAL_CLOSURE.md
+          grep -F 'TOUCH_ANDROID_FISICO=NOT_VALIDATED' PROJECT_STATE.md survival_prototype/docs/FINAL_CLOSURE.md
+          if git grep -nE '(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16})' -- survival_prototype .github/workflows AGENTS.md PROJECT_STATE.md SESSION_SUMMARY.md; then echo 'Possible secret'; exit 1; fi
           test -z "$(git status --porcelain)"
-          echo SOURCE_FREEZE=PASS
-          echo DIFF_SCOPE=PASS
+          echo CODE_FREEZE=PASS
+          echo DOCUMENTATION=PASS
+          echo DIFF_REVIEW=PASS
 
-      - name: Verify unchanged APK and seven QA screenshots from existing evidence
+      - name: Download and verify previously validated Android APK and seven screenshots
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/evidence" "$GITHUB_WORKSPACE/qa-stable"
-          gh release download ceniza-salvaje-v0.3-stabilization-closure --repo "$GITHUB_REPOSITORY" --pattern 'Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk' --pattern 'Ceniza-Salvaje-v0.3-stabilization-screens.zip' --pattern 'QA_METADATA.txt' --dir "$RUNNER_TEMP/evidence"
-          APK="$RUNNER_TEMP/evidence/Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk"
-          SCREENZIP="$RUNNER_TEMP/evidence/Ceniza-Salvaje-v0.3-stabilization-screens.zip"
-          test "$(stat -c %s "$APK")" = 80188628
+          mkdir -p "$RUNNER_TEMP/ceniza-evidence" "$RUNNER_TEMP/ceniza-package"
+          gh release download ceniza-salvaje-v0.3-stabilization-closure --repo "$GITHUB_REPOSITORY" --pattern 'Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk' --pattern 'Ceniza-Salvaje-v0.3-stabilization-screens.zip' --pattern 'QA_METADATA.txt' --dir "$RUNNER_TEMP/ceniza-evidence"
+          APK="$RUNNER_TEMP/ceniza-evidence/Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk"
+          SCREENS="$RUNNER_TEMP/ceniza-evidence/Ceniza-Salvaje-v0.3-stabilization-screens.zip"
+          test "$(stat -c '%s' "$APK")" -eq 80188628
           echo '59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e  '"$APK" | sha256sum -c -
           unzip -tq "$APK"
-          echo '0a3e3dacd38ee6c5ba26fc079c20b0921c56907009c815287190a74ade961b55  '"$SCREENZIP" | sha256sum -c -
-          unzip -tq "$SCREENZIP"
-          unzip -q "$SCREENZIP" -d "$RUNNER_TEMP/evidence"
-          test "$(find "$RUNNER_TEMP/evidence/screenshots" -maxdepth 1 -name '*.png' | wc -l)" -eq 7
-          for file in 01_spawn.png 02_exploration.png 03_combat.png 04_inventory_crafting.png 05_building.png 06_map.png 07_save_load.png; do test -s "$RUNNER_TEMP/evidence/screenshots/$file"; done
-          grep -Fx 'REGRESSION=12/12 PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'FUNCTIONAL_INTEGRAL=25/25 PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'SAVE_END_TO_END=PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'SAVE_CORRUPTO=PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'BACKUP_FALLBACK=PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'EXPORT_FILTER=PASS' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          grep -Fx 'ANDROID_DEVICE_TOUCH=NOT_VALIDATED' "$RUNNER_TEMP/evidence/QA_METADATA.txt"
-          echo APK_INTEGRITY=PASS
-          echo CAPTURES=7/7_PASS
+          echo '0a3e3dacd38ee6c5ba26fc079c20b0921c56907009c815287190a74ade961b55  '"$SCREENS" | sha256sum -c -
+          unzip -tq "$SCREENS"
+          unzip -q "$SCREENS" -d "$RUNNER_TEMP/ceniza-evidence"
+          test "$(find "$RUNNER_TEMP/ceniza-evidence/screenshots" -maxdepth 1 -name '*.png' | wc -l)" -eq 7
+          grep -Fx 'REGRESSION=12/12 PASS' "$RUNNER_TEMP/ceniza-evidence/QA_METADATA.txt"
+          grep -Fx 'FUNCTIONAL_INTEGRAL=25/25 PASS' "$RUNNER_TEMP/ceniza-evidence/QA_METADATA.txt"
+          grep -Fx 'SAVE_END_TO_END=PASS' "$RUNNER_TEMP/ceniza-evidence/QA_METADATA.txt"
+          grep -Fx 'SAVE_CORRUPTO=PASS' "$RUNNER_TEMP/ceniza-evidence/QA_METADATA.txt"
+          grep -Fx 'ANDROID_DEVICE_TOUCH=NOT_VALIDATED' "$RUNNER_TEMP/ceniza-evidence/QA_METADATA.txt"
+          echo EVIDENCE_VERIFIED=PASS
 
-      - name: Record formal closure in existing state documents without altering gameplay
+      - name: Create revision ZIP outside project and checkout
         shell: bash
         run: |
           set -euo pipefail
-          cat >> PROJECT_STATE.md <<'EOF'
-
-          ---
-
-          ## Subproyecto independiente — Ceniza Salvaje v0.3-stable (cierre 2026-09-16)
-
-          Esta sección registra exclusivamente `survival_prototype/`; las etapas P1/P1.3 del RPG descritas arriba pertenecen a otro subproyecto y se conservan sin modificación.
-
-          - Rama aislada: `artifact/survival-v0.3-stabilization`. `main` no se fusionó ni modificó.
-          - Estado definitivo: `PASS_WITH_WARNINGS`; candidato interno `v0.3-stable`, **sin tag/release nuevo ni despliegue automático**.
-          - Commit de código efectivamente validado: `a417530ef3ae1f4f988f91f6e7733ab19564a8c7`. Los commits posteriores de cierre contienen solamente documentación y empaquetado de revisión.
-          - Motor y entrypoint: Godot `4.7.2.stable.official.ed1daf0bf`; `survival_prototype/project.godot → main.tscn → v03.gd`.
-          - QA CI run `35047514437`: regresión 12/12, parse, smoke, recorrido funcional 25/25, save real entre procesos, preservación de primary corrupto, recuperación backup, export PCK filtrado y APK ARM64 verificado: PASS.
-          - Corrección crítica: `chunk_mods` normaliza IDs/HP después de JSON para que recursos eliminados o dañados y enemigos derrotados persistan al reabrir.
-          - Save v4 con validación, temporal, backup, protección contra overwrite de primary corrupto y migración v3→v4; ver `survival_prototype/docs/SAVE_FORMAT.md`.
-          - Runtime: `v03.gd` 1.629 líneas y 13 módulos; sin features nuevas en cierre formal.
-          - Evidencia: 7 PNG post-refactor (spawn, exploración, combate, inventario/crafting, building, mapa y save/load) y `QA_METADATA.txt` vinculados al run anterior. Capturas inspeccionadas visualmente: sin fallo gráfico grave evidente en los estados retratados; no prueban rendimiento ni toda la interacción táctil.
-          - APK debug validado: `Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk`, 80.188.628 bytes, SHA-256 `59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e`; package `org.cenizasalvaje.v03`, minSdk 24, targetSdk 35, ABI arm64-v8a, firma v2.
-          - `TOUCH_ANDROID_FISICO=NOT_VALIDATED` (se mantiene pendiente explícito).
-          - Navegación compleja/pathfinding pendiente; mitigación sidestep y alcance futuro en `survival_prototype/docs/NAVIGATION_FUTURE.md`.
-          - Archivos históricos/CI preservados. `export_presets.cfg` excluye tooling, tests, docs, payload, triggers y versiones obsoletas del APK; filtro validado sobre PCK real.
-          - No alterar código ni iniciar nueva fase hasta completar prueba táctil Android real y revisar navegación en una fase autorizada.
-
-          **Siguiente gate:** prueba física móvil acotada de controles touch, save/reapertura, construcción/cofre y rendimiento; registrar evidencia sin habilitar automáticamente otra fase.
-          EOF
-          cat >> SESSION_SUMMARY.md <<'EOF'
-
-          ---
-
-          ## Continuidad del subproyecto Ceniza Salvaje — cierre formal v0.3 (2026-09-16)
-
-          Este bloque es independiente del RPG/Liria relatado arriba. Rama: `artifact/survival-v0.3-stabilization`; no merge a `main`, no nuevo release/tag. Candidato interno `v0.3-stable`, estado `PASS_WITH_WARNINGS`.
-
-          **Fuente de verdad:** `survival_prototype/README.md`, `docs/ARCHITECTURE.md`, `docs/SAVE_FORMAT.md`, `docs/NAVIGATION_FUTURE.md` y `docs/FINAL_CLOSURE.md`.
-
-          **Código validado:** commit `a417530ef3ae1f4f988f91f6e7733ab19564a8c7`, Godot 4.7.2; posteriores cambios de cierre limitados a docs/workflow de empaquetado. `v03.gd` 1.629 líneas, 13 módulos. Se corrigió normalización JSON de `chunk_mods` tras detectar fallo real de persistencia entre procesos.
-
-          **QA run 35047514437:** regresión 12/12, parse, smoke, E2E 25/25, save/load real, corrupción/backup/escritura bloqueada y filtro PCK: PASS; 7 capturas post-refactor generadas. Inspección visual de las 7: sin regresión grave observable en fotogramas; no equivale a QA física/táctil. APK debug ARM64 verificado 80.188.628 bytes; SHA-256 `59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e`. Artefactos y metadatos en el run/release de evidencia previo; cierre formal no crea release nuevo.
-
-          **Pendientes:** `TOUCH_ANDROID_FISICO=NOT_VALIDATED`; navegación compleja/pathfinding requiere fase posterior. El sidestep actual sólo trata bloqueos locales. No iniciar features automáticamente.
-
-          **Continuar:** validar táctil/instalación/save en un Android real contra el APK comprobado y registrar incidencias concretas; no modificar worldgen ni ejecutar refactor adicional sin evidencia.
-          EOF
-          mkdir -p survival_prototype/docs
-          cat > survival_prototype/docs/FINAL_CLOSURE.md <<'EOF'
-          # Ceniza Salvaje v0.3 — acta de cierre formal
-
-          - Fecha: 2026-09-16.
-          - Estado: `PASS_WITH_WARNINGS`.
-          - Rama: `artifact/survival-v0.3-stabilization` (sin merge ni tag/release nuevo).
-          - Revisión de gameplay verificada: `a417530ef3ae1f4f988f91f6e7733ab19564a8c7`. El cierre posterior actualiza sólo docs/tooling de empaquetado.
-          - Godot: `4.7.2.stable.official.ed1daf0bf`.
-          - QA reproducible: https://github.com/javix142-gif/rpg-fantasia-oscura/actions/runs/35047514437
-
-          ## Gates comprobados
-
-          | Gate | Resultado |
-          |---|---|
-          | Regression | 12/12 PASS |
-          | Godot parse / headless smoke | PASS / PASS |
-          | Recorrido integral | 25/25 PASS |
-          | Save real en procesos separados | PASS |
-          | Primary corrupto preservado, backup válido y bloqueo de escritura | PASS |
-          | Capturas post-refactor | 7/7 generadas e inspeccionadas; no muestran regresión visual grave obvia en esos estados |
-          | Filtro PCK real | PASS |
-          | APK build/firma v2/manifest/ABI/ZIP/zipalign | PASS |
-          | Touch Android físico | NOT_VALIDATED |
-
-          ## APK validado (entregado por separado)
-
-          - Archivo: `Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk`.
-          - Tamaño: `80188628` bytes.
-          - SHA-256: `59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e`.
-          - Paquete: `org.cenizasalvaje.v03`; minSdk `24`, targetSdk `35`, ABI `arm64-v8a`.
-          - Evidencia publicada antes de este cierre: https://github.com/javix142-gif/rpg-fantasia-oscura/releases/tag/ceniza-salvaje-v0.3-stabilization-closure
-
-          ## Capturas existentes
-
-          `01_spawn.png`, `02_exploration.png`, `03_combat.png`, `04_inventory_crafting.png`, `05_building.png`, `06_map.png` y `07_save_load.png`. Su ZIP se adjunta como evidencia dentro del paquete de revisión. Las imágenes fueron capturadas bajo Xvfb/renderer Compatibility: no validan touch físico, audio real ni FPS Android.
-
-          ## Diff/limpieza
-
-          Revisión contra commit base `6c2d49a978ef6c1edcce8e41b4b2d931eefe590d`: cambio de runtime acotado a estabilización, 13 módulos, siete scripts QA y cinco workflows históricos/CI nuevos, triggers y herramientas de estabilización. No hubo borrados de historia, cambio de motor, addons, instalaciones ni nuevas features. `git diff --check`, comprobación de ámbito y búsqueda de claves/rutas absolutas: PASS. Tooling histórico se mantiene en árbol fuente pero se excluye del PCK; su reubicación se difiere deliberadamente.
-
-          ## Pendientes deliberados
-
-          1. `TOUCH_ANDROID_FISICO=NOT_VALIDATED`: probar joystick, botones, menús, drag de construcción, cofre, background/resume y save en el dispositivo.
-          2. Navegación compleja: sidestep local no resuelve laberintos ni bases grandes; ver `NAVIGATION_FUTURE.md`.
-
-          **Siguiente paso único:** QA física acotada de Android y registrar resultados, sin iniciar funcionalidades ni fusionar ramas automáticamente.
-          EOF
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add PROJECT_STATE.md SESSION_SUMMARY.md survival_prototype/docs/FINAL_CLOSURE.md
-          git diff --cached --check
-          git commit -m 'Record definitive v0.3 stabilization status and QA evidence [skip ci]'
-          git push origin HEAD:artifact/survival-v0.3-stabilization
-          echo "CLOSURE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo DOCUMENTATION=PASS
-
-      - name: Confirm documentation-only changes since tested commit and create source-review ZIP outside project
-        shell: bash
-        run: |
-          set -euo pipefail
-          TESTED=a417530ef3ae1f4f988f91f6e7733ab19564a8c7
-          git diff --check "$TESTED" HEAD
-          mapfile -t CHANGED < <(git diff --name-only "$TESTED" HEAD)
-          for path in "${CHANGED[@]}"; do
-            case "$path" in PROJECT_STATE.md|SESSION_SUMMARY.md|survival_prototype/docs/FINAL_CLOSURE.md|.github/workflows/package-survival-v03-stable-review.yml) ;; *) echo "Runtime changed after QA: $path"; exit 1 ;; esac
-          done
           python3 - <<'PY'
           from pathlib import Path
           import hashlib, os, re, subprocess, zipfile
-          root=Path.cwd(); project=root/'survival_prototype'
-          output=root/'qa-stable'/'Ceniza-Salvaje-v0.3-stable-review.zip'
-          output.parent.mkdir(exist_ok=True)
-          tracked=subprocess.check_output(['git','ls-files','-z','survival_prototype','AGENTS.md','PROJECT_STATE.md','SESSION_SUMMARY.md']).decode().split('\0')
-          included=[]; excluded=[]
-          def forbidden(p):
-              parts=Path(p).parts
-              if any(x in {'.godot','.git','__pycache__','.cache','build','android','logs','tmp','cache'} for x in parts): return True
-              name=Path(p).name.lower()
-              if name.startswith('.env') or name.endswith(('.keystore','.jks','.p12','.pfx','.key','.pem','.apk','.aab','.zip','.log','.pyc','.pyo','.tmp','.bak')): return True
-              return False
-          with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-              for path in tracked:
-                  if not path: continue
-                  if forbidden(path): excluded.append(path); continue
-                  source=root/path
+          root = Path.cwd()
+          evidence = Path(os.environ['RUNNER_TEMP']) / 'ceniza-evidence'
+          output_dir = Path(os.environ['RUNNER_TEMP']) / 'ceniza-package'
+          output = output_dir / 'Ceniza-Salvaje-v0.3-stable-review.zip'
+          paths = [p for p in subprocess.check_output(['git', 'ls-files', '-z', 'survival_prototype', 'AGENTS.md', 'PROJECT_STATE.md', 'SESSION_SUMMARY.md']).decode().split('\0') if p]
+          def forbidden(path):
+              parts = Path(path).parts
+              name = Path(path).name.lower()
+              return any(x in {'.git', '.godot', '__pycache__', '.cache', 'build', 'android', 'logs', 'cache', 'tmp'} for x in parts) or name.startswith('.env') or name.endswith(('.keystore', '.jks', '.p12', '.pfx', '.key', '.pem', '.apk', '.aab', '.zip', '.log', '.pyc', '.pyo', '.tmp', '.bak'))
+          included = []
+          with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              for path in paths:
+                  if forbidden(path): continue
+                  source = root / path
                   if not source.is_file() or source.is_symlink(): continue
-                  if source.stat().st_size > 20_000_000: raise RuntimeError('Unexpected large source file: '+path)
-                  data=source.read_bytes()
-                  if re.search(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}',data): raise RuntimeError('Possible secret: '+path)
-                  z.writestr(path,data)
+                  if source.stat().st_size > 20_000_000: raise RuntimeError('Unexpected large file: ' + path)
+                  data = source.read_bytes()
+                  if re.search(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}', data): raise RuntimeError('Secret indicator: ' + path)
+                  z.writestr(path, data)
                   included.append(path)
-              evidence=Path(os.environ['RUNNER_TEMP'])/'evidence'
-              for png in sorted((evidence/'screenshots').glob('*.png')): z.write(png,'review_evidence/screenshots/'+png.name)
-              z.write(evidence/'QA_METADATA.txt','review_evidence/QA_METADATA.txt')
-              z.writestr('review_evidence/SOURCE_COMMIT.txt',os.environ['CLOSURE_COMMIT']+'\nTESTED_CODE_COMMIT=a417530ef3ae1f4f988f91f6e7733ab19564a8c7\n')
+              for png in sorted((evidence / 'screenshots').glob('*.png')):
+                  z.write(png, 'review_evidence/screenshots/' + png.name)
+              z.write(evidence / 'QA_METADATA.txt', 'review_evidence/QA_METADATA.txt')
+              z.writestr('review_evidence/SOURCE_COMMIT.txt', 'REVIEW_COMMIT=' + os.environ['GITHUB_SHA'] + '\nTESTED_CODE_COMMIT=a417530ef3ae1f4f988f91f6e7733ab19564a8c7\n')
           with zipfile.ZipFile(output) as z:
-              bad=z.testzip()
-              if bad: raise RuntimeError('Corrupt ZIP member: '+bad)
-              assert len([x for x in z.namelist() if x.startswith('review_evidence/screenshots/') and x.endswith('.png')])==7
-              required=['survival_prototype/project.godot','survival_prototype/main.tscn','survival_prototype/v03.gd','survival_prototype/docs/FINAL_CLOSURE.md','survival_prototype/tests/regression_runner.gd','AGENTS.md','PROJECT_STATE.md','SESSION_SUMMARY.md']
-              assert all(x in z.namelist() for x in required)
-              assert not any(forbidden(x) for x in z.namelist())
-          sha=hashlib.sha256(output.read_bytes()).hexdigest()
-          size=output.stat().st_size
-          (output.parent/'REVIEW_SHA256.txt').write_text(f'PATH={output}\nSIZE_BYTES={size}\nSHA256={sha}\nSOURCE_COMMIT={os.environ["CLOSURE_COMMIT"]}\nTESTED_CODE_COMMIT=a417530ef3ae1f4f988f91f6e7733ab19564a8c7\nTRACKED_SOURCE_FILES={len(included)}\nEXCLUDED_GENERATED_FILES={len(excluded)}\n')
-          print((output.parent/'REVIEW_SHA256.txt').read_text())
+              assert z.testzip() is None
+              names = z.namelist()
+              assert len([p for p in names if p.startswith('review_evidence/screenshots/') and p.endswith('.png')]) == 7
+              assert all(p in names for p in ['survival_prototype/project.godot', 'survival_prototype/main.tscn', 'survival_prototype/v03.gd', 'survival_prototype/docs/FINAL_CLOSURE.md', 'survival_prototype/tests/regression_runner.gd', 'AGENTS.md', 'PROJECT_STATE.md', 'SESSION_SUMMARY.md'])
+              assert not any(forbidden(p) for p in names)
+          size = output.stat().st_size
+          sha = hashlib.sha256(output.read_bytes()).hexdigest()
+          manifest = output_dir / 'REVIEW_SHA256.txt'
+          manifest.write_text(f'PATH={output}\nSIZE_BYTES={size}\nSHA256={sha}\nREVIEW_COMMIT={os.environ["GITHUB_SHA"]}\nTESTED_CODE_COMMIT=a417530ef3ae1f4f988f91f6e7733ab19564a8c7\nTRACKED_SOURCE_FILES={len(included)}\n')
+          print(manifest.read_text())
           print('SOURCE_REVIEW_ZIP=PASS')
           PY
-          sha256sum qa-stable/Ceniza-Salvaje-v0.3-stable-review.zip
-          unzip -tq qa-stable/Ceniza-Salvaje-v0.3-stable-review.zip
+          unzip -tq "$RUNNER_TEMP/ceniza-package/Ceniza-Salvaje-v0.3-stable-review.zip"
           test -z "$(git status --porcelain)"
 
-      - name: Upload private workflow artifact only (no release, no tag)
+      - name: Upload review ZIP as Actions artifact only (no release or tag)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Ceniza-Salvaje-v0.3-stable-review
           path: |
-            qa-stable/Ceniza-Salvaje-v0.3-stable-review.zip
-            qa-stable/REVIEW_SHA256.txt
+            ${{ runner.temp }}/ceniza-package/Ceniza-Salvaje-v0.3-stable-review.zip
+            ${{ runner.temp }}/ceniza-package/REVIEW_SHA256.txt
           if-no-files-found: error
           retention-days: 30
