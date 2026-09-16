@@ -103,3 +103,19 @@ El ataque, ARPG, Radan, Ceniza y Cyrion siguen fuera de alcance.
   determinista a partir de assets existentes.
 - Estado: `P1_DEVICE=PENDING`, `USER_VISUAL_APPROVAL=PENDING`,
   `P1_REAL=PENDING`, `P2_AUTORIZADO=NO`.
+
+---
+
+## Continuidad del subproyecto Ceniza Salvaje — cierre formal v0.3 (2026-09-16)
+
+Este bloque es independiente del RPG/Liria relatado arriba. Rama: `artifact/survival-v0.3-stabilization`; no merge a `main`, no nuevo release/tag. Candidato interno `v0.3-stable`, estado `PASS_WITH_WARNINGS`.
+
+**Fuente de verdad:** `survival_prototype/README.md`, `docs/ARCHITECTURE.md`, `docs/SAVE_FORMAT.md`, `docs/NAVIGATION_FUTURE.md` y `docs/FINAL_CLOSURE.md`.
+
+**Código validado:** commit `a417530ef3ae1f4f988f91f6e7733ab19564a8c7`, Godot 4.7.2; posteriores cambios de cierre limitados a docs/workflow de empaquetado. `v03.gd` 1.629 líneas, 13 módulos. Se corrigió normalización JSON de `chunk_mods` tras detectar fallo real de persistencia entre procesos.
+
+**QA run 35047514437:** regresión 12/12, parse, smoke, E2E 25/25, save/load real, corrupción/backup/escritura bloqueada y filtro PCK: PASS; 7 capturas post-refactor generadas. Inspección visual de las 7: sin regresión grave observable en fotogramas; no equivale a QA física/táctil. APK debug ARM64 verificado 80.188.628 bytes; SHA-256 `59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e`. Artefactos y metadatos en el run/release de evidencia previo; cierre formal no crea release nuevo.
+
+**Pendientes:** `TOUCH_ANDROID_FISICO=NOT_VALIDATED`; navegación compleja/pathfinding requiere fase posterior. El sidestep actual sólo trata bloqueos locales. No iniciar features automáticamente.
+
+**Continuar:** validar táctil/instalación/save en un Android real contra el APK comprobado y registrar incidencias concretas; no modificar worldgen ni ejecutar refactor adicional sin evidencia.

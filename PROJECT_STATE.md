@@ -114,3 +114,26 @@ Liria + combate ARPG**. No comenzar P2 automáticamente.
 P1 cloud y P1.1/P1.2/P1.3 cloud están superados; el gate real de dispositivo
 sigue pendiente. El ataque, el combate ARPG y los sistemas posteriores no
 están implementados. `LISTO_PARA_PROMPT_2=NO`.
+
+---
+
+## Subproyecto independiente — Ceniza Salvaje v0.3-stable (cierre 2026-09-16)
+
+Esta sección registra exclusivamente `survival_prototype/`; las etapas P1/P1.3 del RPG descritas arriba pertenecen a otro subproyecto y se conservan sin modificación.
+
+- Rama aislada: `artifact/survival-v0.3-stabilization`. `main` no se fusionó ni modificó.
+- Estado definitivo: `PASS_WITH_WARNINGS`; candidato interno `v0.3-stable`, **sin tag/release nuevo ni despliegue automático**.
+- Commit de código efectivamente validado: `a417530ef3ae1f4f988f91f6e7733ab19564a8c7`. Los commits posteriores de cierre contienen solamente documentación y empaquetado de revisión.
+- Motor y entrypoint: Godot `4.7.2.stable.official.ed1daf0bf`; `survival_prototype/project.godot → main.tscn → v03.gd`.
+- QA CI run `35047514437`: regresión 12/12, parse, smoke, recorrido funcional 25/25, save real entre procesos, preservación de primary corrupto, recuperación backup, export PCK filtrado y APK ARM64 verificado: PASS.
+- Corrección crítica: `chunk_mods` normaliza IDs/HP después de JSON para que recursos eliminados o dañados y enemigos derrotados persistan al reabrir.
+- Save v4 con validación, temporal, backup, protección contra overwrite de primary corrupto y migración v3→v4; ver `survival_prototype/docs/SAVE_FORMAT.md`.
+- Runtime: `v03.gd` 1.629 líneas y 13 módulos; sin features nuevas en cierre formal.
+- Evidencia: 7 PNG post-refactor (spawn, exploración, combate, inventario/crafting, building, mapa y save/load) y `QA_METADATA.txt` vinculados al run anterior. Capturas inspeccionadas visualmente: sin fallo gráfico grave evidente en los estados retratados; no prueban rendimiento ni toda la interacción táctil.
+- APK debug validado: `Ceniza-Salvaje-v0.3-stabilization-arm64-debug.apk`, 80.188.628 bytes, SHA-256 `59bb2c39f917f8f50802b069d8b56f072fa7defc22b85e16775172e89552b21e`; package `org.cenizasalvaje.v03`, minSdk 24, targetSdk 35, ABI arm64-v8a, firma v2.
+- `TOUCH_ANDROID_FISICO=NOT_VALIDATED` (se mantiene pendiente explícito).
+- Navegación compleja/pathfinding pendiente; mitigación sidestep y alcance futuro en `survival_prototype/docs/NAVIGATION_FUTURE.md`.
+- Archivos históricos/CI preservados. `export_presets.cfg` excluye tooling, tests, docs, payload, triggers y versiones obsoletas del APK; filtro validado sobre PCK real.
+- No alterar código ni iniciar nueva fase hasta completar prueba táctil Android real y revisar navegación en una fase autorizada.
+
+**Siguiente gate:** prueba física móvil acotada de controles touch, save/reapertura, construcción/cofre y rendimiento; registrar evidencia sin habilitar automáticamente otra fase.
