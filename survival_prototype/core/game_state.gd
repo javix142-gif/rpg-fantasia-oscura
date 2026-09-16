@@ -71,7 +71,7 @@ static func apply(host: Node, data: Dictionary) -> bool:
 	host.owned_tools["pico"] = bool(tools.get("pico", false))
 	host.equipped_tool = String(data.get("equipped_tool", ""))
 	host.equipped_weapon = String(data.get("equipped_weapon", "espada_oxidada"))
-	host.chunk_mods = (data.get("chunk_mods", {}) as Dictionary).duplicate(true)
+	host.chunk_mods = _normalize_chunk_mods(data.get("chunk_mods", {}))
 	host.buildings.clear()
 	for raw_variant in data.get("buildings", []):
 		var raw: Dictionary = raw_variant
@@ -110,3 +110,32 @@ static func apply(host: Node, data: Dictionary) -> bool:
 	if host.spatial_index != null:
 		host.spatial_index.rebuild(host.buildings)
 	return true
+
+static func _normalize_chunk_mods(raw_mods: Variant) -> Dictionary:
+	var normalized: Dictionary = {}
+	if not raw_mods is Dictionary:
+		return normalized
+	for key_variant in (raw_mods as Dictionary).keys():
+		var key := String(key_variant)
+		var raw_variant: Variant = (raw_mods as Dictionary)[key_variant]
+		if not raw_variant is Dictionary:
+			continue
+		var raw: Dictionary = raw_variant
+		var removed: Array = []
+		for id_variant in raw.get("removed_resources", []):
+			removed.append(int(id_variant))
+		var killed: Array = []
+		for id_variant in raw.get("killed_enemies", []):
+			killed.append(int(id_variant))
+		var hp_state: Dictionary = {}
+		var raw_hp: Variant = raw.get("resource_hp", {})
+		if raw_hp is Dictionary:
+			for hp_key_variant in (raw_hp as Dictionary).keys():
+				var hp_key := String(hp_key_variant)
+				hp_state[hp_key] = float((raw_hp as Dictionary)[hp_key_variant])
+		normalized[key] = {
+			"removed_resources": removed,
+			"resource_hp": hp_state,
+			"killed_enemies": killed,
+		}
+	return normalized
