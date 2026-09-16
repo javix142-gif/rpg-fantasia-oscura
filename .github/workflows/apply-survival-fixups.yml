@@ -1,0 +1,40 @@
+name: Apply Ceniza Salvaje Stabilization Fixups
+
+on:
+  push:
+    branches:
+      - artifact/survival-v0.3-stabilization
+    paths:
+      - 'survival_prototype/tools/stabilization_fixups.py'
+      - 'survival_prototype/tools/APPLY_FIXUPS.trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixups:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+      - name: Apply guarded fixups
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 survival_prototype/tools/stabilization_fixups.py
+          git diff --check
+          grep -F 'func _chest_transfer(item: String, to_chest: bool, all_items: bool = false)' survival_prototype/v03.gd
+      - name: Persist fixups
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- survival_prototype/v03.gd; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add survival_prototype/v03.gd
+          git commit -m 'Fix v0.3 modular compatibility wrapper [skip ci]'
+          git push origin HEAD:artifact/survival-v0.3-stabilization
