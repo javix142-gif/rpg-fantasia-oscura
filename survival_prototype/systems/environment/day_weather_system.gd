@@ -2,7 +2,7 @@ class_name CSDayWeatherSystem
 extends RefCounted
 
 static func update_time(host: Node, delta: float) -> void:
-	var old_clock := host.day_clock
+	var old_clock: float = float(host.day_clock)
 	host.day_clock += delta / 230.0
 	if host.day_clock >= 1.0:
 		host.day_clock -= 1.0
@@ -13,8 +13,8 @@ static func update_time(host: Node, delta: float) -> void:
 		host._set_major("Cae la noche", 1.6)
 
 static func update_survival(host: Node, delta: float) -> void:
-	var old_hunger := host.hunger
-	var old_hp := host.hp
+	var old_hunger: float = float(host.hunger)
+	var old_hp: float = float(host.hp)
 	host.hunger = maxf(0.0, host.hunger - delta * 0.18)
 	if host.hunger <= 0.0:
 		host.hp -= delta * 1.6
