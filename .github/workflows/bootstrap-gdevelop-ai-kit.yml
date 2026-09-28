@@ -51,14 +51,54 @@ jobs:
           du -sh "$ROOT"
           tar --zstd -cf "$RUNNER_TEMP/gdevelop-ai-kit-pinned-repos.tar.zst" -C "$ROOT" .
           sha256sum "$RUNNER_TEMP/gdevelop-ai-kit-pinned-repos.tar.zst" | tee "$RUNNER_TEMP/SHA256_REPOS.txt"
+          split -b 300M -d -a 2 "$RUNNER_TEMP/gdevelop-ai-kit-pinned-repos.tar.zst" "$RUNNER_TEMP/repos.part."
+          ls -lh "$RUNNER_TEMP"/repos.part.*
+          test -f "$RUNNER_TEMP/repos.part.00"
+          test -f "$RUNNER_TEMP/repos.part.01"
+          test -f "$RUNNER_TEMP/repos.part.02"
+          test -f "$RUNNER_TEMP/repos.part.03"
 
-      - name: Upload pinned repository bundle
+      - name: Upload part 00
         uses: actions/upload-artifact@v4
         with:
-          name: gdevelop-ai-kit-pinned-repos
-          path: |
-            ${{ runner.temp }}/gdevelop-ai-kit-pinned-repos.tar.zst
-            ${{ runner.temp }}/SHA256_REPOS.txt
+          name: gdevelop-ai-kit-pinned-repos-part-00
+          path: ${{ runner.temp }}/repos.part.00
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-ai-kit-pinned-repos-part-01
+          path: ${{ runner.temp }}/repos.part.01
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-ai-kit-pinned-repos-part-02
+          path: ${{ runner.temp }}/repos.part.02
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-ai-kit-pinned-repos-part-03
+          path: ${{ runner.temp }}/repos.part.03
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload verification metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-ai-kit-pinned-repos-metadata
+          path: ${{ runner.temp }}/SHA256_REPOS.txt
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
