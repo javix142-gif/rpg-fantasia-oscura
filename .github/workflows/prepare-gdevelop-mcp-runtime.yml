@@ -1,0 +1,108 @@
+name: Prepare GDevelop MCP Runtime
+
+on:
+  push:
+    branches:
+      - "tooling/gdevelop-mcp-runtime-20260928"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Clone pinned MCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/982945902/gdevelop-mcp-server.git mcp
+          git -C mcp checkout --detach 96ed51ea081beedd7f6948b5516083c5f8fb3c63
+          test "$(git -C mcp rev-parse HEAD)" = "96ed51ea081beedd7f6948b5516083c5f8fb3c63"
+          echo "MCP_PIN=PASS"
+
+      - name: Install MCP dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd mcp
+          npm ci
+          npm test
+
+      - name: Download official GDevelop 5.6.282 AppImage
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o GDevelop.AppImage \
+            https://github.com/4ian/GDevelop/releases/download/v5.6.282/GDevelop-5-5.6.282.AppImage
+          echo "7ef0a1e065561f7ee69fbb699d35ccb3c274ffca34ddb8351f5670d89b692b79  GDevelop.AppImage" | sha256sum -c -
+          chmod +x GDevelop.AppImage
+          mkdir -p appimage
+          cd appimage
+          ../GDevelop.AppImage --appimage-extract >/dev/null
+          test -d squashfs-root/resources/GDJS/Runtime
+          echo "GDEVELOP_APPIMAGE=PASS"
+
+      - name: Download exact pinned libGD.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p portable/libgd portable
+          BASE="https://s3.amazonaws.com/gdevelop-gdevelop.js/master/commit/ec1f2e3f4f6879168cdc70462418ddaa6a55e6c8"
+          curl -fL --retry 3 -o portable/libgd/libGD.js "$BASE/libGD.js"
+          curl -fL --retry 3 -o portable/libgd/libGD.wasm "$BASE/libGD.wasm"
+          test -s portable/libgd/libGD.js
+          test -s portable/libgd/libGD.wasm
+          sha256sum portable/libgd/libGD.js portable/libgd/libGD.wasm | tee LIBGD_SHA256.txt
+          echo "LIBGD_PINNED_COMMIT=ec1f2e3f4f6879168cdc70462418ddaa6a55e6c8" | tee SECURITY_REPORT.txt
+          echo "PREVIEW_BIND=127.0.0.1" | tee -a SECURITY_REPORT.txt
+          echo "MCP_NO_TOKENS_REQUIRED=YES" | tee -a SECURITY_REPORT.txt
+          echo "LIBGD=PASS" | tee -a SECURITY_REPORT.txt
+
+      - name: Assemble portable runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a appimage/squashfs-root/resources/GDJS portable/GDJS
+          cp -a mcp portable/gdevelop-mcp-server
+          rm -rf portable/gdevelop-mcp-server/.git
+          du -sh portable/*
+          test -f portable/gdevelop-mcp-server/src/index.js
+          test -d portable/gdevelop-mcp-server/node_modules
+          test -d portable/GDJS/Runtime
+
+      - name: Real authoring and preview test
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GDEVELOP_LIBGD_PATH="$PWD/portable/libgd/libGD.js"
+          export GDEVELOP_GDJS_ROOT="$PWD/portable/GDJS"
+          cd portable/gdevelop-mcp-server
+          node --test test/real-native-authoring.test.js | tee ../../REAL_RUNTIME_TEST.txt
+          grep -q "pass 1" ../../REAL_RUNTIME_TEST.txt
+          echo "REAL_NATIVE_AUTHORING=PASS" | tee -a ../../SECURITY_REPORT.txt
+
+      - name: Package portable MCP runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --zstd -cf gdevelop-mcp-portable-runtime.tar.zst portable
+          sha256sum gdevelop-mcp-portable-runtime.tar.zst | tee SHA256_MCP_RUNTIME.txt
+          ls -lh gdevelop-mcp-portable-runtime.tar.zst
+          du -sh portable
+
+      - name: Upload portable MCP runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-mcp-portable-runtime
+          path: |
+            gdevelop-mcp-portable-runtime.tar.zst
+            SHA256_MCP_RUNTIME.txt
+            LIBGD_SHA256.txt
+            SECURITY_REPORT.txt
+            REAL_RUNTIME_TEST.txt
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
