@@ -1,0 +1,64 @@
+name: Bootstrap GDevelop AI Master Kit
+
+on:
+  push:
+    branches:
+      - "tooling/gdevelop-ai-kit-bootstrap-20260928"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Materialize pinned repositories
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/gdevelop-kit"
+          mkdir -p "$ROOT"
+
+          clone_pin() {
+            local name="$1" url="$2" commit="$3" target="$4"
+            echo "==> $name"
+            mkdir -p "$(dirname "$ROOT/$target")"
+            git init -q "$ROOT/$target"
+            git -C "$ROOT/$target" remote add origin "$url"
+            git -C "$ROOT/$target" fetch --depth=1 origin "$commit"
+            git -C "$ROOT/$target" checkout -q --detach FETCH_HEAD
+            actual="$(git -C "$ROOT/$target" rev-parse HEAD)"
+            test "$actual" = "$commit"
+            printf '%s\n' "$actual" > "$ROOT/$target/.PINNED_COMMIT"
+          }
+
+          clone_pin gdevelop-examples https://github.com/GDevelopApp/GDevelop-examples.git b4031112255dd710db4c176e3bc607e275c1e586 04_OFFICIAL_REFERENCES/GDevelop-examples
+          clone_pin gdevelop-extensions https://github.com/GDevelopApp/GDevelop-extensions.git ac9a7e8aee11d8a1c056bf7b529439949d198649 04_OFFICIAL_REFERENCES/GDevelop-extensions
+          clone_pin gdevelop-documentation https://github.com/GDevelopApp/GDevelop-documentation.git 2aa743f3a4d7290396967bd96fb4d33b4d1b5936 04_OFFICIAL_REFERENCES/GDevelop-documentation
+          clone_pin gdevelop-tutorials https://github.com/GDevelopApp/GDevelop-tutorials.git b65cee06311d0bbdaf3750251ce92d486a094e28 04_OFFICIAL_REFERENCES/GDevelop-tutorials
+          clone_pin gdevelop-community-list https://github.com/GDevelopApp/GDevelop-community-list.git c59659fb3862c791295b77ccfa8029b66ccbe3c6 04_OFFICIAL_REFERENCES/GDevelop-community-list
+          clone_pin gdevelop-engine-source https://github.com/4ian/GDevelop.git ec1f2e3f4f6879168cdc70462418ddaa6a55e6c8 04_OFFICIAL_REFERENCES/GDevelop-engine-source
+          clone_pin gdevelop-reference-skill https://github.com/adamboothuk/gdevelop-reference.git 463a7594b609364ad4d9f346ed8b08596434041f 02_SKILLS/upstream/gdevelop-reference
+          clone_pin gdevelop-mcp-server https://github.com/982945902/gdevelop-mcp-server.git 96ed51ea081beedd7f6948b5516083c5f8fb3c63 03_MCP/gdevelop-mcp-server
+
+          {
+            echo "BOOTSTRAP=PASS"
+            find "$ROOT" -name .PINNED_COMMIT -print -exec cat {} \;
+          } | tee "$ROOT/BOOTSTRAP_REPORT.txt"
+
+          du -sh "$ROOT"
+          tar --zstd -cf "$RUNNER_TEMP/gdevelop-ai-kit-pinned-repos.tar.zst" -C "$ROOT" .
+          sha256sum "$RUNNER_TEMP/gdevelop-ai-kit-pinned-repos.tar.zst" | tee "$RUNNER_TEMP/SHA256_REPOS.txt"
+
+      - name: Upload pinned repository bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdevelop-ai-kit-pinned-repos
+          path: |
+            ${{ runner.temp }}/gdevelop-ai-kit-pinned-repos.tar.zst
+            ${{ runner.temp }}/SHA256_REPOS.txt
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
